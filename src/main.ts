@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import { ReviewerSelector } from './reviewer-selector.js'
 import { SlackNotifier } from './slack-notifier.js'
 import { GitHubClient } from './github-client.js'
+import type { SupportedLanguage } from './types.js'
 
 /**
  * The main function for the action.
@@ -15,6 +16,7 @@ export async function run(): Promise<void> {
     const slackWebhookUrl = core.getInput('slack-webhook-url')
     const reviewersConfigPath = core.getInput('reviewers-config-path')
     const maxReviewers = parseInt(core.getInput('max-reviewers'), 10)
+    const language = core.getInput('language') as SupportedLanguage
 
     // 필수 파라미터 검증
     if (!githubToken) {
@@ -51,7 +53,7 @@ export async function run(): Promise<void> {
 
     // Slack 알림 전송 (선택사항)
     if (slackWebhookUrl) {
-      const slackNotifier = new SlackNotifier(slackWebhookUrl)
+      const slackNotifier = new SlackNotifier(slackWebhookUrl, language || 'ko')
       await slackNotifier.sendReviewerNotification(selectedReviewers)
     }
   } catch (error) {
