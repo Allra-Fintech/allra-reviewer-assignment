@@ -1,10 +1,35 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import https from 'https'
-import type { Reviewer, SlackMessage } from './types.js'
+import type {
+  Reviewer,
+  SlackMessage,
+  SupportedLanguage,
+  MessageTemplates
+} from './types.js'
 
 export class SlackNotifier {
-  constructor(private webhookUrl: string) {}
+  private messageTemplates: Record<SupportedLanguage, MessageTemplates> = {
+    ko: {
+      assignmentHeader: '리뷰어로 할당되었습니다!!',
+      prTitleLabel: 'PR 제목',
+      authorLabel: '담당자',
+      reviewersLabel: '리뷰어',
+      reviewLinkLabel: '리뷰하러 가기'
+    },
+    en: {
+      assignmentHeader: 'You have been assigned as reviewers!!',
+      prTitleLabel: 'PR Title',
+      authorLabel: 'Author',
+      reviewersLabel: 'Reviewers',
+      reviewLinkLabel: 'Review PR'
+    }
+  }
+
+  constructor(
+    private webhookUrl: string,
+    private language: SupportedLanguage = 'ko'
+  ) {}
 
   async sendReviewerNotification(reviewers: Reviewer[]): Promise<void> {
     try {
@@ -19,15 +44,16 @@ export class SlackNotifier {
         .join(' ')
 
       const reviewerList = reviewers.map((r) => r.githubName).join(', ')
+      const templates = this.messageTemplates[this.language]
 
       const payload: SlackMessage = {
         text:
           (mentions ? `${mentions}\n` : '') +
-          '리뷰어로 할당되었습니다!! \n' +
-          `• PR 제목: ${prTitle}\n` +
-          `• 담당자: ${prAuthor}\n` +
-          `• 리뷰어: ${reviewerList}\n` +
-          `• 리뷰하러 가기 >> ${prUrl}`
+          `${templates.assignmentHeader} \n` +
+          `• ${templates.prTitleLabel}: ${prTitle}\n` +
+          `• ${templates.authorLabel}: ${prAuthor}\n` +
+          `• ${templates.reviewersLabel}: ${reviewerList}\n` +
+          `• ${templates.reviewLinkLabel} >> ${prUrl}`
       }
 
       await this.sendWebhookRequest(payload)
