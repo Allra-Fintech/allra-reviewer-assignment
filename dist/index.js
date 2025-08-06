@@ -34073,8 +34073,26 @@ var githubExports = requireGithub();
 
 class SlackNotifier {
     webhookUrl;
-    constructor(webhookUrl) {
+    language;
+    messageTemplates = {
+        ko: {
+            assignmentHeader: '리뷰어로 할당되었습니다!!',
+            prTitleLabel: 'PR 제목',
+            authorLabel: '담당자',
+            reviewersLabel: '리뷰어',
+            reviewLinkLabel: '리뷰하러 가기'
+        },
+        en: {
+            assignmentHeader: 'You have been assigned as reviewers!!',
+            prTitleLabel: 'PR Title',
+            authorLabel: 'Author',
+            reviewersLabel: 'Reviewers',
+            reviewLinkLabel: 'Review PR'
+        }
+    };
+    constructor(webhookUrl, language = 'ko') {
         this.webhookUrl = webhookUrl;
+        this.language = language;
     }
     async sendReviewerNotification(reviewers) {
         try {
@@ -34087,13 +34105,14 @@ class SlackNotifier {
                 .map((r) => r.slackMention)
                 .join(' ');
             const reviewerList = reviewers.map((r) => r.githubName).join(', ');
+            const templates = this.messageTemplates[this.language];
             const payload = {
                 text: (mentions ? `${mentions}\n` : '') +
-                    '리뷰어로 할당되었습니다!! \n' +
-                    `• PR 제목: ${prTitle}\n` +
-                    `• 담당자: ${prAuthor}\n` +
-                    `• 리뷰어: ${reviewerList}\n` +
-                    `• 리뷰하러 가기 >> ${prUrl}`
+                    `${templates.assignmentHeader} \n` +
+                    `• ${templates.prTitleLabel}: ${prTitle}\n` +
+                    `• ${templates.authorLabel}: ${prAuthor}\n` +
+                    `• ${templates.reviewersLabel}: ${reviewerList}\n` +
+                    `• ${templates.reviewLinkLabel} >> ${prUrl}`
             };
             await this.sendWebhookRequest(payload);
             coreExports.info('Slack webhook notification sent successfully');
@@ -34180,6 +34199,7 @@ async function run() {
         const slackWebhookUrl = coreExports.getInput('slack-webhook-url');
         const reviewersConfigPath = coreExports.getInput('reviewers-config-path');
         const maxReviewers = parseInt(coreExports.getInput('max-reviewers'), 10);
+        const language = coreExports.getInput('language');
         // 필수 파라미터 검증
         if (!githubToken) {
             coreExports.setFailed('GitHub token is required');
@@ -34206,7 +34226,7 @@ async function run() {
         await githubClient.assignReviewers(selectedReviewers);
         // Slack 알림 전송 (선택사항)
         if (slackWebhookUrl) {
-            const slackNotifier = new SlackNotifier(slackWebhookUrl);
+            const slackNotifier = new SlackNotifier(slackWebhookUrl, language || 'ko');
             await slackNotifier.sendReviewerNotification(selectedReviewers);
         }
     }
