@@ -1,23 +1,36 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: 'Auto Reviewer Assignment'
+description:
+  'Automatically assigns random 3 reviewers to pull requests based on a
+  reviewers configuration file'
+author: 'allra'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: heart
-  color: red
+  icon: users
+  color: blue
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  github-token:
+    description: 'GitHub token for authentication'
     required: true
-    default: '1000'
+    default: ${{ github.token }}
+  slack-webhook-url:
+    description: 'Slack webhook URL for notifications (optional)'
+    required: false
+  reviewers-config-path:
+    description: 'Path to reviewers configuration file'
+    required: false
+    default: '.github/reviewers.yml'
+  max-reviewers:
+    description: 'Maximum number of reviewers to assign'
+    required: false
+    default: '3'
 
 # Define your outputs here.
 outputs:
-  time:
-    description: Your output description here
+  assigned-reviewers:
+    description: 'List of assigned reviewers (comma-separated GitHub usernames)'
 
 runs:
   using: node20
