@@ -63,24 +63,24 @@ jobs:
 
 ## ⚙️ Input Parameters
 
-| Parameter               | Required   | Default                 | Description                                         |
-| ----------------------- | ---------- | ----------------------- | --------------------------------------------------- |
-| `github-token`          | ✅ **Yes** | -                       | GitHub token for API authentication                 |
-| `slack-webhook-url`     | ❌ No      | -                       | Slack webhook URL for notifications (skip if empty) |
-| `reviewers-config-path` | ❌ No      | `.github/reviewers.yml` | Path to reviewers configuration file                |
-| `max-reviewers`         | ❌ No      | `3`                     | Maximum number of reviewers to assign               |
+| Parameter | Required | Default |
+| --- | --- | --- |
+| `github-token` | ✅ **Yes** | - |
+| `slack-webhook-url` | ❌ No | - |
+| `reviewers-config-path` | ❌ No | `.github/reviewers.yml` |
+| `max-reviewers` | ❌ No | `3` |
 
 ## 📤 Outputs
 
-| Output Name          | Description                                                  |
-| -------------------- | ------------------------------------------------------------ |
-| `assigned-reviewers` | List of assigned reviewer GitHub usernames (comma-separated) |
+| Output Name | Description |
+| --- | --- |
+| `assigned-reviewers` | List of assigned reviewer GitHub usernames |
 
 ## 💬 Slack Notifications
 
 When Slack webhook URL is configured, sends notifications in this format:
 
-```
+```text
 <@U1234567> <@U2345678> <@U3456789>
 You have been assigned as reviewers!!
 
@@ -108,7 +108,7 @@ You have been assigned as reviewers!!
 
 ## 📁 Project Structure
 
-```
+```text
 src/
 ├── main.ts              # Main orchestration logic
 ├── reviewer-selector.ts # Reviewer selection and configuration loading
@@ -200,7 +200,7 @@ steps:
 
 ## 🧪 Test Coverage
 
-```
+```text
 File                  | % Stmts | % Branch | % Funcs | % Lines |
 ----------------------|---------|----------|---------|---------|
 All files             |   97.77 |     93.1 |     100 |    97.7 |
@@ -230,4 +230,4 @@ This project is distributed under the [MIT License](LICENSE).
 
 ---
 
-**Made with ❤️ by Allra-Fintech**
+## Made with ❤️ by Allra-Fintech
