@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import https from 'https'
+import axios from 'axios'
 import type {
   Reviewer,
   SlackMessage,
@@ -31,7 +31,7 @@ export class SlackNotifier {
     private language: SupportedLanguage = 'ko'
   ) {}
 
-  async sendReviewerNotification(reviewers: Reviewer[]): Promise<void> {
+  async sendReviewerNotification(reviewers: Reviewer[]) {
     try {
       const prUrl = github.context.payload.pull_request?.html_url
       const prTitle = github.context.payload.pull_request?.title
@@ -56,49 +56,27 @@ export class SlackNotifier {
           `• ${templates.reviewLinkLabel} >> ${prUrl}`
       }
 
-      await this.sendWebhookRequest(payload)
+      const result = await this.sendWebhookRequest(payload)
       core.info('Slack webhook notification sent successfully')
+      return result
     } catch (error) {
       core.warning(`Failed to send Slack webhook notification: ${error}`)
     }
   }
 
-  private sendWebhookRequest(payload: SlackMessage): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const data = JSON.stringify(payload)
-      const parsedUrl = new URL(this.webhookUrl)
-
-      const options = {
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port || 443,
-        path: parsedUrl.pathname,
-        method: 'POST',
+  private sendWebhookRequest(payload: SlackMessage) {
+    return axios
+      .post(this.webhookUrl, payload, {
         headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(data)
+          'Content-Type': 'application/json'
         }
-      }
-
-      const req = https.request(options, (res) => {
-        let responseData = ''
-        res.on('data', (chunk) => {
-          responseData += chunk
-        })
-        res.on('end', () => {
-          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-            resolve()
-          } else {
-            reject(new Error(`HTTP ${res.statusCode}: ${responseData}`))
-          }
-        })
       })
-
-      req.on('error', (error) => {
-        reject(error)
+      .then((body) => {
+        core.info('Slack notification sent successfully')
+        return body.data
       })
-
-      req.write(data)
-      req.end()
-    })
+      .catch((error) => {
+        core.warning(`Error sending Slack notification: ${error.message}`)
+      })
   }
 }

@@ -2,17 +2,41 @@
  * Unit tests for the action's main functionality, src/main.ts
  */
 import { jest } from '@jest/globals'
-import * as core from '../__fixtures__/core.js'
+
+// Mock the modules before importing anything else
+const mockCore = {
+  debug: jest.fn() as jest.MockedFunction<(message: string) => void>,
+  error: jest.fn() as jest.MockedFunction<(message: string | Error) => void>,
+  info: jest.fn() as jest.MockedFunction<(message: string) => void>,
+  getInput: jest.fn() as jest.MockedFunction<
+    (name: string, options?: unknown) => string
+  >,
+  setOutput: jest.fn() as jest.MockedFunction<
+    (name: string, value: unknown) => void
+  >,
+  setFailed: jest.fn() as jest.MockedFunction<
+    (message: string | Error) => void
+  >,
+  warning: jest.fn() as jest.MockedFunction<(message: string | Error) => void>
+}
 
 // Create mock functions
-const mockSelectRandomReviewers = jest.fn()
-const mockSendReviewerNotification = jest.fn()
-const mockAssignReviewers = jest.fn()
-const mockGetPRCreator = jest.fn()
-const mockValidatePRContext = jest.fn()
+const mockSelectRandomReviewers = jest.fn() as jest.MockedFunction<
+  () => unknown[]
+>
+const mockSendReviewerNotification = jest.fn() as jest.MockedFunction<
+  () => Promise<unknown>
+>
+const mockAssignReviewers = jest.fn() as jest.MockedFunction<
+  () => Promise<void>
+>
+const mockGetPRCreator = jest.fn() as jest.MockedFunction<
+  () => string | undefined
+>
+const mockValidatePRContext = jest.fn() as jest.MockedFunction<() => boolean>
 
 // Mock @actions/core
-jest.unstable_mockModule('@actions/core', () => core)
+jest.unstable_mockModule('@actions/core', () => mockCore)
 
 // Mock the individual modules with class constructors
 jest.unstable_mockModule('../src/reviewer-selector.js', () => ({
@@ -48,10 +72,10 @@ describe('main.ts', () => {
 
   beforeEach(() => {
     // Reset all mocks
-    jest.resetAllMocks()
+    jest.clearAllMocks()
 
     // Setup default mock implementations
-    core.getInput.mockImplementation((name: string) => {
+    mockCore.getInput.mockImplementation((name: string) => {
       switch (name) {
         case 'github-token':
           return 'mock-token'
@@ -87,13 +111,13 @@ describe('main.ts', () => {
   })
 
   it('should handle missing GitHub token', async () => {
-    core.getInput.mockImplementation((name: string) =>
+    mockCore.getInput.mockImplementation((name: string) =>
       name === 'github-token' ? '' : 'mock-value'
     )
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith('GitHub token is required')
+    expect(mockCore.setFailed).toHaveBeenCalledWith('GitHub token is required')
     expect(mockValidatePRContext).not.toHaveBeenCalled()
   })
 
@@ -113,7 +137,9 @@ describe('main.ts', () => {
     await run()
 
     expect(mockGetPRCreator).toHaveBeenCalled()
-    expect(core.warning).toHaveBeenCalledWith('Could not determine PR creator')
+    expect(mockCore.warning).toHaveBeenCalledWith(
+      'Could not determine PR creator'
+    )
     expect(mockSelectRandomReviewers).not.toHaveBeenCalled()
   })
 
@@ -123,12 +149,12 @@ describe('main.ts', () => {
     await run()
 
     expect(mockSelectRandomReviewers).toHaveBeenCalled()
-    expect(core.info).toHaveBeenCalledWith('No available reviewers found')
+    expect(mockCore.info).toHaveBeenCalledWith('No available reviewers found')
     expect(mockAssignReviewers).not.toHaveBeenCalled()
   })
 
   it('should skip Slack notification when webhook URL is not provided', async () => {
-    core.getInput.mockImplementation((name: string) => {
+    mockCore.getInput.mockImplementation((name: string) => {
       switch (name) {
         case 'github-token':
           return 'mock-token'
@@ -155,7 +181,7 @@ describe('main.ts', () => {
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith(
+    expect(mockCore.setFailed).toHaveBeenCalledWith(
       'Action failed: GitHub API Error'
     )
   })
@@ -166,7 +192,7 @@ describe('main.ts', () => {
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith(
+    expect(mockCore.setFailed).toHaveBeenCalledWith(
       'Action failed: Slack API Error'
     )
   })
@@ -176,11 +202,13 @@ describe('main.ts', () => {
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith('Action failed: Unknown error')
+    expect(mockCore.setFailed).toHaveBeenCalledWith(
+      'Action failed: Unknown error'
+    )
   })
 
   it('should parse max-reviewers parameter correctly', async () => {
-    core.getInput.mockImplementation((name: string) => {
+    mockCore.getInput.mockImplementation((name: string) => {
       switch (name) {
         case 'max-reviewers':
           return '5'

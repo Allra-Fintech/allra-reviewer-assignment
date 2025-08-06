@@ -2,28 +2,42 @@
  * Unit tests for reviewer-selector.ts
  */
 import { jest } from '@jest/globals'
-import * as core from '../__fixtures__/core.js'
 
-// Mock modules
-jest.unstable_mockModule('@actions/core', () => core)
+// Mock the modules before importing anything else
+const mockCore = {
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  getInput: jest.fn(),
+  setOutput: jest.fn(),
+  setFailed: jest.fn(),
+  warning: jest.fn()
+}
+
+const mockYamlLoad = jest.fn()
+const mockReadFileSync = jest.fn()
+
+jest.unstable_mockModule('@actions/core', () => mockCore)
 jest.unstable_mockModule('js-yaml', () => ({
-  load: jest.fn()
+  load: mockYamlLoad
 }))
 jest.unstable_mockModule('fs', () => ({
-  readFileSync: jest.fn()
+  readFileSync: mockReadFileSync
 }))
 
+// Now import the module under test
 const { ReviewerSelector } = await import('../src/reviewer-selector.js')
-const yaml = await import('js-yaml')
-const fs = await import('fs')
 
 describe('ReviewerSelector', () => {
-  let reviewerSelector: ReviewerSelector
+  let reviewerSelector: InstanceType<typeof ReviewerSelector>
   const mockConfigPath = '.github/reviewers.yml'
 
   beforeEach(() => {
     reviewerSelector = new ReviewerSelector(mockConfigPath)
-    jest.resetAllMocks()
+    jest.clearAllMocks()
+    // Reset mocks to default state
+    mockReadFileSync.mockReturnValue('mock yaml content')
+    mockYamlLoad.mockReturnValue({ reviewers: [] })
   })
 
   describe('selectRandomReviewers', () => {
@@ -34,8 +48,8 @@ describe('ReviewerSelector', () => {
         { githubName: 'pr-author' }
       ]
 
-      ;(fs.readFileSync as jest.Mock).mockReturnValue('mock yaml content')
-      ;(yaml.load as jest.Mock).mockReturnValue({ reviewers: mockReviewers })
+      mockReadFileSync.mockReturnValue('mock yaml content')
+      mockYamlLoad.mockReturnValue({ reviewers: mockReviewers })
 
       const result = reviewerSelector.selectRandomReviewers(2, 'pr-author')
 
@@ -49,25 +63,25 @@ describe('ReviewerSelector', () => {
         { githubName: 'reviewer2' }
       ]
 
-      ;(fs.readFileSync as jest.Mock).mockReturnValue('mock yaml content')
-      ;(yaml.load as jest.Mock).mockReturnValue({ reviewers: mockReviewers })
+      mockReadFileSync.mockReturnValue('mock yaml content')
+      mockYamlLoad.mockReturnValue({ reviewers: mockReviewers })
 
       const result = reviewerSelector.selectRandomReviewers(5, 'pr-author')
 
       expect(result).toHaveLength(2)
-      expect(core.info).toHaveBeenCalledWith(
+      expect(mockCore.info).toHaveBeenCalledWith(
         'Only 2 reviewers available, selecting all'
       )
     })
 
     it('should return empty array when no reviewers available', () => {
-      ;(fs.readFileSync as jest.Mock).mockReturnValue('mock yaml content')
-      ;(yaml.load as jest.Mock).mockReturnValue({ reviewers: [] })
+      mockReadFileSync.mockReturnValue('mock yaml content')
+      mockYamlLoad.mockReturnValue({ reviewers: [] })
 
       const result = reviewerSelector.selectRandomReviewers(3, 'pr-author')
 
       expect(result).toHaveLength(0)
-      expect(core.warning).toHaveBeenCalledWith(
+      expect(mockCore.warning).toHaveBeenCalledWith(
         'No available reviewers after filtering PR creator'
       )
     })
@@ -75,40 +89,40 @@ describe('ReviewerSelector', () => {
     it('should return only non-PR-author reviewers when PR author is in list', () => {
       const mockReviewers = [{ githubName: 'pr-author' }]
 
-      ;(fs.readFileSync as jest.Mock).mockReturnValue('mock yaml content')
-      ;(yaml.load as jest.Mock).mockReturnValue({ reviewers: mockReviewers })
+      mockReadFileSync.mockReturnValue('mock yaml content')
+      mockYamlLoad.mockReturnValue({ reviewers: mockReviewers })
 
       const result = reviewerSelector.selectRandomReviewers(3, 'pr-author')
 
       expect(result).toHaveLength(0)
-      expect(core.warning).toHaveBeenCalledWith(
+      expect(mockCore.warning).toHaveBeenCalledWith(
         'No available reviewers after filtering PR creator'
       )
     })
 
     it('should handle file read errors gracefully', () => {
-      ;(fs.readFileSync as jest.Mock).mockImplementation(() => {
+      mockReadFileSync.mockImplementation(() => {
         throw new Error('File not found')
       })
 
       const result = reviewerSelector.selectRandomReviewers(3, 'pr-author')
 
       expect(result).toHaveLength(0)
-      expect(core.error).toHaveBeenCalledWith(
+      expect(mockCore.error).toHaveBeenCalledWith(
         expect.stringMatching(/Failed to load reviewers config/)
       )
     })
 
     it('should handle yaml parsing errors gracefully', () => {
-      ;(fs.readFileSync as jest.Mock).mockReturnValue('invalid yaml')
-      ;(yaml.load as jest.Mock).mockImplementation(() => {
+      mockReadFileSync.mockReturnValue('invalid yaml')
+      mockYamlLoad.mockImplementation(() => {
         throw new Error('Invalid YAML')
       })
 
       const result = reviewerSelector.selectRandomReviewers(3, 'pr-author')
 
       expect(result).toHaveLength(0)
-      expect(core.error).toHaveBeenCalledWith(
+      expect(mockCore.error).toHaveBeenCalledWith(
         expect.stringMatching(/Failed to load reviewers config/)
       )
     })
@@ -122,8 +136,8 @@ describe('ReviewerSelector', () => {
         { githubName: 'reviewer5' }
       ]
 
-      ;(fs.readFileSync as jest.Mock).mockReturnValue('mock yaml content')
-      ;(yaml.load as jest.Mock).mockReturnValue({ reviewers: mockReviewers })
+      mockReadFileSync.mockReturnValue('mock yaml content')
+      mockYamlLoad.mockReturnValue({ reviewers: mockReviewers })
 
       const result = reviewerSelector.selectRandomReviewers(3, 'pr-author')
 

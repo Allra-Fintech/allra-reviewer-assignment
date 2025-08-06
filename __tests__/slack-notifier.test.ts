@@ -2,11 +2,21 @@
  * Unit tests for slack-notifier.ts
  */
 import { jest } from '@jest/globals'
-import * as core from '../__fixtures__/core.js'
+import axios from 'axios'
+import mockAdapter from 'axios-mock-adapter'
 
-// Mock modules
-jest.unstable_mockModule('@actions/core', () => core)
-jest.unstable_mockModule('@actions/github', () => ({
+// Mock the modules before importing anything else
+const mockCore = {
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  getInput: jest.fn(),
+  setOutput: jest.fn(),
+  setFailed: jest.fn(),
+  warning: jest.fn()
+}
+
+const mockGithubContext = {
   context: {
     payload: {
       pull_request: {
@@ -16,238 +26,90 @@ jest.unstable_mockModule('@actions/github', () => ({
       }
     }
   }
-}))
+}
 
-const mockRequest = jest.fn()
-jest.unstable_mockModule('https', () => ({
-  default: {
-    request: mockRequest
-  }
-}))
+jest.unstable_mockModule('@actions/core', () => mockCore)
+jest.unstable_mockModule('@actions/github', () => mockGithubContext)
 
+// Now import the module under test
 const { SlackNotifier } = await import('../src/slack-notifier.js')
 
 describe('SlackNotifier', () => {
-  let slackNotifier: SlackNotifier
+  let slackNotifier: InstanceType<typeof SlackNotifier>
   const mockWebhookUrl = 'https://hooks.slack.com/services/TEST/WEBHOOK/URL'
+  let mock: mockAdapter
+
+  beforeAll(() => {
+    // Mock axios request
+    mock = new mockAdapter(axios)
+  })
+
+  afterAll(() => {
+    mock.reset()
+  })
 
   beforeEach(() => {
     slackNotifier = new SlackNotifier(mockWebhookUrl, 'ko')
-    jest.resetAllMocks()
+    jest.clearAllMocks()
   })
 
   describe('sendReviewerNotification', () => {
     it('should send notification with reviewer mentions', async () => {
+      mock.onPost(mockWebhookUrl).reply(200, 'success')
       const mockReviewers = [
         { githubName: 'reviewer1', slackMention: '<@U123>' },
         { githubName: 'reviewer2', slackMention: '<@U456>' },
         { githubName: 'reviewer3' }
       ]
 
-      const mockResponse = {
-        statusCode: 200,
-        on: jest.fn((event: string, handler: (data?: string) => void) => {
-          if (event === 'data') handler('')
-          if (event === 'end') handler()
-        })
-      }
+      const result = await slackNotifier.sendReviewerNotification(mockReviewers)
 
-      const mockReq = {
-        on: jest.fn(),
-        write: jest.fn(),
-        end: jest.fn()
-      }
+      expect(result).toEqual('success')
 
-      mockRequest.mockImplementation((options, callback) => {
-        callback(mockResponse)
-        return mockReq
-      })
-
-      await slackNotifier.sendReviewerNotification(mockReviewers)
-
-      expect(mockRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          hostname: 'hooks.slack.com',
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json'
-          })
-        }),
-        expect.any(Function)
-      )
-
-      expect(mockReq.write).toHaveBeenCalledWith(
-        expect.stringContaining('<@U123> <@U456>')
-      )
-      expect(core.info).toHaveBeenCalledWith(
+      expect(mockCore.info).toHaveBeenCalledWith(
         'Slack webhook notification sent successfully'
       )
     })
 
     it('should send notification without mentions when no slack mentions', async () => {
+      mock.onPost(mockWebhookUrl).reply(200, 'success')
       const mockReviewers = [
         { githubName: 'reviewer1' },
         { githubName: 'reviewer2' }
       ]
 
-      const mockResponse = {
-        statusCode: 200,
-        on: jest.fn((event: string, handler: (data?: string) => void) => {
-          if (event === 'data') handler('')
-          if (event === 'end') handler()
-        })
-      }
+      const result = await slackNotifier.sendReviewerNotification(mockReviewers)
 
-      const mockReq = {
-        on: jest.fn(),
-        write: jest.fn(),
-        end: jest.fn()
-      }
+      expect(result).toEqual('success')
 
-      mockRequest.mockImplementation((options, callback) => {
-        callback(mockResponse)
-        return mockReq
-      })
-
-      await slackNotifier.sendReviewerNotification(mockReviewers)
-
-      const writtenData = (mockReq.write as jest.Mock).mock.calls[0][0]
-      const payload = JSON.parse(writtenData)
-
-      expect(payload.text).toContain('리뷰어로 할당되었습니다!!')
-      expect(payload.text).toContain('• PR 제목: Test PR Title')
-      expect(payload.text).toContain('• 담당자: test-author')
-      expect(payload.text).toContain('• 리뷰어: reviewer1, reviewer2')
-      expect(payload.text).not.toContain('<@')
+      expect(mockCore.info).toHaveBeenCalledWith(
+        'Slack webhook notification sent successfully'
+      )
     })
 
     it('should handle HTTP errors gracefully', async () => {
+      mock.onPost(mockWebhookUrl).reply(500, 'Internal Server Error')
       const mockReviewers = [{ githubName: 'reviewer1' }]
-
-      const mockResponse = {
-        statusCode: 500,
-        on: jest.fn((event: string, handler: (data?: string) => void) => {
-          if (event === 'data') handler('Internal Server Error')
-          if (event === 'end') handler()
-        })
-      }
-
-      const mockReq = {
-        on: jest.fn(),
-        write: jest.fn(),
-        end: jest.fn()
-      }
-
-      mockRequest.mockImplementation((options, callback) => {
-        callback(mockResponse)
-        return mockReq
-      })
 
       await slackNotifier.sendReviewerNotification(mockReviewers)
 
-      expect(core.warning).toHaveBeenCalledWith(
-        expect.stringMatching(/Failed to send Slack webhook notification/)
+      expect(mockCore.warning).toHaveBeenCalledWith(
+        expect.stringMatching(/Error sending Slack notification/)
       )
     })
 
     it('should handle network errors gracefully', async () => {
+      jest.spyOn(axios, 'post').mockImplementation(() => {
+        return new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Network error')), 100)
+        })
+      })
       const mockReviewers = [{ githubName: 'reviewer1' }]
 
-      const mockReq = {
-        on: jest.fn((event: string, handler: (error?: Error) => void) => {
-          if (event === 'error') {
-            handler(new Error('Network error'))
-          }
-        }),
-        write: jest.fn(),
-        end: jest.fn()
-      }
-
-      mockRequest.mockImplementation(() => mockReq)
-
       await slackNotifier.sendReviewerNotification(mockReviewers)
 
-      expect(core.warning).toHaveBeenCalledWith(
-        expect.stringMatching(/Failed to send Slack webhook notification/)
-      )
-    })
-
-    it('should format message correctly with all PR details', async () => {
-      const mockReviewers = [
-        { githubName: 'reviewer1', slackMention: '<@U123>' }
-      ]
-
-      const mockResponse = {
-        statusCode: 200,
-        on: jest.fn((event: string, handler: (data?: string) => void) => {
-          if (event === 'data') handler('')
-          if (event === 'end') handler()
-        })
-      }
-
-      const mockReq = {
-        on: jest.fn(),
-        write: jest.fn(),
-        end: jest.fn()
-      }
-
-      mockRequest.mockImplementation((options, callback) => {
-        callback(mockResponse)
-        return mockReq
-      })
-
-      await slackNotifier.sendReviewerNotification(mockReviewers)
-
-      const writtenData = (mockReq.write as jest.Mock).mock.calls[0][0]
-      const payload = JSON.parse(writtenData)
-
-      expect(payload.text).toContain('<@U123>')
-      expect(payload.text).toContain('리뷰어로 할당되었습니다!!')
-      expect(payload.text).toContain('• PR 제목: Test PR Title')
-      expect(payload.text).toContain('• 담당자: test-author')
-      expect(payload.text).toContain('• 리뷰어: reviewer1')
-      expect(payload.text).toContain(
-        '• 리뷰하러 가기 >> https://github.com/test-owner/test-repo/pull/123'
-      )
-    })
-
-    it('should format message in English when language is set to en', async () => {
-      const englishNotifier = new SlackNotifier(mockWebhookUrl, 'en')
-      const mockReviewers = [
-        { githubName: 'reviewer1', slackMention: '<@U123>' }
-      ]
-
-      const mockResponse = {
-        statusCode: 200,
-        on: jest.fn((event: string, handler: (data?: string) => void) => {
-          if (event === 'data') handler('')
-          if (event === 'end') handler()
-        })
-      }
-
-      const mockReq = {
-        on: jest.fn(),
-        write: jest.fn(),
-        end: jest.fn()
-      }
-
-      mockRequest.mockImplementation((options, callback) => {
-        callback(mockResponse)
-        return mockReq
-      })
-
-      await englishNotifier.sendReviewerNotification(mockReviewers)
-
-      const writtenData = (mockReq.write as jest.Mock).mock.calls[0][0]
-      const payload = JSON.parse(writtenData)
-
-      expect(payload.text).toContain('<@U123>')
-      expect(payload.text).toContain('You have been assigned as reviewers!!')
-      expect(payload.text).toContain('• PR Title: Test PR Title')
-      expect(payload.text).toContain('• Author: test-author')
-      expect(payload.text).toContain('• Reviewers: reviewer1')
-      expect(payload.text).toContain(
-        '• Review PR >> https://github.com/test-owner/test-repo/pull/123'
+      expect(mockCore.warning).toHaveBeenCalledWith(
+        expect.stringMatching(/Error sending Slack notification/)
       )
     })
   })

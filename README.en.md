@@ -63,17 +63,17 @@ jobs:
 
 ## ⚙️ Input Parameters
 
-| Parameter | Required | Default |
-| --- | --- | --- |
-| `github-token` | ✅ **Yes** | - |
-| `slack-webhook-url` | ❌ No | - |
-| `reviewers-config-path` | ❌ No | `.github/reviewers.yml` |
-| `max-reviewers` | ❌ No | `3` |
+| Parameter               | Required   | Default                 |
+| ----------------------- | ---------- | ----------------------- |
+| `github-token`          | ✅ **Yes** | -                       |
+| `slack-webhook-url`     | ❌ No      | -                       |
+| `reviewers-config-path` | ❌ No      | `.github/reviewers.yml` |
+| `max-reviewers`         | ❌ No      | `3`                     |
 
 ## 📤 Outputs
 
-| Output Name | Description |
-| --- | --- |
+| Output Name          | Description                                |
+| -------------------- | ------------------------------------------ |
 | `assigned-reviewers` | List of assigned reviewer GitHub usernames |
 
 ## 💬 Slack Notifications

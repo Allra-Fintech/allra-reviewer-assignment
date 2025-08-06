@@ -2,15 +2,24 @@
  * Unit tests for github-client.ts
  */
 import { jest } from '@jest/globals'
-import * as core from '../__fixtures__/core.js'
 
-// Mock the octokit request method
-const mockRequestReviewers = jest.fn()
-const mockGetOctokit = jest.fn()
+// Mock the modules before importing anything else
+const mockCore = {
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  getInput: jest.fn(),
+  setOutput: jest.fn(),
+  setFailed: jest.fn(),
+  warning: jest.fn()
+}
 
-// Mock modules
-jest.unstable_mockModule('@actions/core', () => core)
-jest.unstable_mockModule('@actions/github', () => ({
+const mockRequestReviewers = jest.fn() as jest.MockedFunction<
+  () => Promise<unknown>
+>
+const mockGetOctokit = jest.fn() as jest.MockedFunction<() => unknown>
+
+const mockGithubContext = {
   context: {
     repo: { owner: 'test-owner', repo: 'test-repo' },
     payload: {
@@ -21,16 +30,20 @@ jest.unstable_mockModule('@actions/github', () => ({
     }
   },
   getOctokit: mockGetOctokit
-}))
+}
 
+jest.unstable_mockModule('@actions/core', () => mockCore)
+jest.unstable_mockModule('@actions/github', () => mockGithubContext)
+
+// Now import the module under test
 const { GitHubClient } = await import('../src/github-client.js')
 
 describe('GitHubClient', () => {
-  let githubClient: GitHubClient
+  let githubClient: InstanceType<typeof GitHubClient>
   const mockToken = 'test-token'
 
   beforeEach(() => {
-    jest.resetAllMocks()
+    jest.clearAllMocks()
 
     // Setup mock octokit instance
     mockGetOctokit.mockReturnValue({
@@ -51,7 +64,7 @@ describe('GitHubClient', () => {
         { githubName: 'reviewer2' }
       ]
 
-      mockRequestReviewers.mockResolvedValue({})
+      mockRequestReviewers.mockResolvedValueOnce({})
 
       await githubClient.assignReviewers(mockReviewers)
 
@@ -62,10 +75,10 @@ describe('GitHubClient', () => {
         reviewers: ['reviewer1', 'reviewer2']
       })
 
-      expect(core.info).toHaveBeenCalledWith(
+      expect(mockCore.info).toHaveBeenCalledWith(
         'Assigned reviewers: reviewer1, reviewer2'
       )
-      expect(core.setOutput).toHaveBeenCalledWith(
+      expect(mockCore.setOutput).toHaveBeenCalledWith(
         'assigned-reviewers',
         'reviewer1,reviewer2'
       )
@@ -74,7 +87,7 @@ describe('GitHubClient', () => {
     it('should handle single reviewer', async () => {
       const mockReviewers = [{ githubName: 'reviewer1' }]
 
-      mockRequestReviewers.mockResolvedValue({})
+      mockRequestReviewers.mockResolvedValueOnce({})
 
       await githubClient.assignReviewers(mockReviewers)
 
@@ -85,8 +98,10 @@ describe('GitHubClient', () => {
         reviewers: ['reviewer1']
       })
 
-      expect(core.info).toHaveBeenCalledWith('Assigned reviewers: reviewer1')
-      expect(core.setOutput).toHaveBeenCalledWith(
+      expect(mockCore.info).toHaveBeenCalledWith(
+        'Assigned reviewers: reviewer1'
+      )
+      expect(mockCore.setOutput).toHaveBeenCalledWith(
         'assigned-reviewers',
         'reviewer1'
       )
@@ -95,7 +110,7 @@ describe('GitHubClient', () => {
     it('should handle empty reviewers array', async () => {
       const mockReviewers: { githubName: string }[] = []
 
-      mockRequestReviewers.mockResolvedValue({})
+      mockRequestReviewers.mockResolvedValueOnce({})
 
       await githubClient.assignReviewers(mockReviewers)
 
@@ -106,8 +121,8 @@ describe('GitHubClient', () => {
         reviewers: []
       })
 
-      expect(core.info).toHaveBeenCalledWith('Assigned reviewers: ')
-      expect(core.setOutput).toHaveBeenCalledWith('assigned-reviewers', '')
+      expect(mockCore.info).toHaveBeenCalledWith('Assigned reviewers: ')
+      expect(mockCore.setOutput).toHaveBeenCalledWith('assigned-reviewers', '')
     })
 
     it('should propagate API errors', async () => {
