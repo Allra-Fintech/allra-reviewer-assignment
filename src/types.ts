@@ -10,3 +10,13 @@ export interface ReviewerConfig {
 export interface SlackMessage {
   text: string
 }
+
+export type SupportedLanguage = 'ko' | 'en'
+
+export interface MessageTemplates {
+  assignmentHeader: string
+  prTitleLabel: string
+  authorLabel: string
+  reviewersLabel: string
+  reviewLinkLabel: string
+}
