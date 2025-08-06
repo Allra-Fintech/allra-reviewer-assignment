@@ -26,6 +26,10 @@ inputs:
     description: 'Maximum number of reviewers to assign'
     required: false
     default: '3'
+  language:
+    description: 'Language for Slack notifications (ko, en)'
+    required: false
+    default: 'ko'
 
 # Define your outputs here.
 outputs:
