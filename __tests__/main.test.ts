@@ -61,6 +61,8 @@ describe('main.ts', () => {
           return '.github/reviewers.yml'
         case 'max-reviewers':
           return '3'
+        case 'language':
+          return 'ko'
         default:
           return ''
       }

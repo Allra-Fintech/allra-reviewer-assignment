@@ -32,7 +32,7 @@ describe('SlackNotifier', () => {
   const mockWebhookUrl = 'https://hooks.slack.com/services/TEST/WEBHOOK/URL'
 
   beforeEach(() => {
-    slackNotifier = new SlackNotifier(mockWebhookUrl)
+    slackNotifier = new SlackNotifier(mockWebhookUrl, 'ko')
     jest.resetAllMocks()
   })
 
@@ -208,6 +208,46 @@ describe('SlackNotifier', () => {
       expect(payload.text).toContain('• 리뷰어: reviewer1')
       expect(payload.text).toContain(
         '• 리뷰하러 가기 >> https://github.com/test-owner/test-repo/pull/123'
+      )
+    })
+
+    it('should format message in English when language is set to en', async () => {
+      const englishNotifier = new SlackNotifier(mockWebhookUrl, 'en')
+      const mockReviewers = [
+        { githubName: 'reviewer1', slackMention: '<@U123>' }
+      ]
+
+      const mockResponse = {
+        statusCode: 200,
+        on: jest.fn((event: string, handler: (data?: string) => void) => {
+          if (event === 'data') handler('')
+          if (event === 'end') handler()
+        })
+      }
+
+      const mockReq = {
+        on: jest.fn(),
+        write: jest.fn(),
+        end: jest.fn()
+      }
+
+      mockRequest.mockImplementation((options, callback) => {
+        callback(mockResponse)
+        return mockReq
+      })
+
+      await englishNotifier.sendReviewerNotification(mockReviewers)
+
+      const writtenData = (mockReq.write as jest.Mock).mock.calls[0][0]
+      const payload = JSON.parse(writtenData)
+
+      expect(payload.text).toContain('<@U123>')
+      expect(payload.text).toContain('You have been assigned as reviewers!!')
+      expect(payload.text).toContain('• PR Title: Test PR Title')
+      expect(payload.text).toContain('• Author: test-author')
+      expect(payload.text).toContain('• Reviewers: reviewer1')
+      expect(payload.text).toContain(
+        '• Review PR >> https://github.com/test-owner/test-repo/pull/123'
       )
     })
   })
