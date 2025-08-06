@@ -65,7 +65,7 @@ jobs:
 
 | Parameter               | Required   | Default                 | Description                                         |
 | ----------------------- | ---------- | ----------------------- | --------------------------------------------------- |
-| `github-token`          | ✅ **Yes** | `${{ github.token }}`   | GitHub token for API authentication                 |
+| `github-token`          | ✅ **Yes** | -                       | GitHub token for API authentication                 |
 | `slack-webhook-url`     | ❌ No      | -                       | Slack webhook URL for notifications (skip if empty) |
 | `reviewers-config-path` | ❌ No      | `.github/reviewers.yml` | Path to reviewers configuration file                |
 | `max-reviewers`         | ❌ No      | `3`                     | Maximum number of reviewers to assign               |
@@ -231,4 +231,3 @@ This project is distributed under the [MIT License](LICENSE).
 ---
 
 **Made with ❤️ by Allra-Fintech**
-

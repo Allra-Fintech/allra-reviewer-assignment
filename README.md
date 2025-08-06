@@ -26,9 +26,9 @@
 ```yaml
 reviewers:
   - githubName: '김개발'
-    slackMention: '<@U1234567>' // Slack 사용자 ID
+    slackMention: '<@U1234567>' # Slack 사용자 ID
   - githubName: '박코딩'
-    slackMention: '<@U2345678>' // Slack 사용자 ID
+    slackMention: '<@U2345678>' # Slack 사용자 ID
 ```
 
 ### 2. 워크플로우 파일 생성
@@ -63,7 +63,7 @@ jobs:
 
 | 파라미터                | 필수 여부   | 기본값                  | 설명                                              |
 | ----------------------- | ----------- | ----------------------- | ------------------------------------------------- |
-| `github-token`          | ✅ **필수** | `${{ github.token }}`   | GitHub API 인증을 위한 토큰                       |
+| `github-token`          | ✅ **필수** | -                       | GitHub API 인증을 위한 토큰                       |
 | `slack-webhook-url`     | ❌ 선택     | -                       | Slack 알림용 웹훅 URL (비어있으면 알림 전송 안함) |
 | `reviewers-config-path` | ❌ 선택     | `.github/reviewers.yml` | 리뷰어 설정 파일의 경로                           |
 | `max-reviewers`         | ❌ 선택     | `3`                     | 할당할 최대 리뷰어 수                             |

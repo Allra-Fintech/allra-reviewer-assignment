@@ -14,7 +14,6 @@ inputs:
   github-token:
     description: 'GitHub token for authentication'
     required: true
-    default: ${{ github.token }}
   slack-webhook-url:
     description: 'Slack webhook URL for notifications (optional)'
     required: false
