@@ -54240,15 +54240,13 @@ class SlackNotifier {
             assignmentHeader: '리뷰어로 할당되었습니다!!',
             prTitleLabel: 'PR 제목',
             authorLabel: '담당자',
-            reviewersLabel: '리뷰어',
-            reviewLinkLabel: '리뷰하러 가기'
+            reviewersLabel: '리뷰어'
         },
         en: {
             assignmentHeader: 'You have been assigned as reviewers!!',
             prTitleLabel: 'PR Title',
             authorLabel: 'Author',
-            reviewersLabel: 'Reviewers',
-            reviewLinkLabel: 'Review PR'
+            reviewersLabel: 'Reviewers'
         }
     };
     constructor(webhookUrl, language = 'ko') {
@@ -54270,10 +54268,9 @@ class SlackNotifier {
             const payload = {
                 text: (mentions ? `${mentions}\n` : '') +
                     `${templates.assignmentHeader} \n` +
-                    `• ${templates.prTitleLabel}: ${prTitle}\n` +
+                    `• ${templates.prTitleLabel}: <${prUrl}|${prTitle}>\n` +
                     `• ${templates.authorLabel}: ${prAuthor}\n` +
-                    `• ${templates.reviewersLabel}: ${reviewerList}\n` +
-                    `• ${templates.reviewLinkLabel} >> ${prUrl}`
+                    `• ${templates.reviewersLabel}: ${reviewerList}`
             };
             const result = await this.sendWebhookRequest(payload);
             coreExports.info('Slack webhook notification sent successfully');
