@@ -2,8 +2,8 @@
 
 > GitHub Action that automates PR review process with random 3-person selection.
 
-[![GitHub Super-Linter](https://github.com/gnoyes/allra-reviewer-assignment/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
-![CI](https://github.com/gnoyes/allra-reviewer-assignment/actions/workflows/ci.yml/badge.svg)
+[![GitHub Super-Linter](https://github.com/Allra-Fintech/allra-reviewer-assignment/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
+![CI](https://github.com/Allra-Fintech/allra-reviewer-assignment/actions/workflows/ci.yml/badge.svg)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
 **Language**: [한국어](./README.md) | **English**
