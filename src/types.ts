@@ -18,5 +18,4 @@ export interface MessageTemplates {
   prTitleLabel: string
   authorLabel: string
   reviewersLabel: string
-  reviewLinkLabel: string
 }
