@@ -1,305 +1,214 @@
-# Create a GitHub Action Using TypeScript
+# 📋 PR 리뷰어 자동 할당 액션
 
-[![GitHub Super-Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
-![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
-[![Check dist/](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml)
-[![CodeQL](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml)
+> 토스 스타일의 PR 리뷰 프로세스를 자동화하는 GitHub Action입니다.
+
+[![GitHub Super-Linter](https://github.com/gnoyes/allra-reviewer-assignment/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
+![CI](https://github.com/gnoyes/allra-reviewer-assignment/actions/workflows/ci.yml/badge.svg)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
-Use this template to bootstrap the creation of a TypeScript action. :rocket:
+## 🚀 주요 기능
 
-This template includes compilation support, tests, a validation workflow,
-publishing, and versioning guidance.
+- **자동 리뷰어 할당**: PR이 생성되거나 재오픈될 때 랜덤하게 3명의 리뷰어를 자동
+  선택
+- **PR 작성자 제외**: PR 작성자는 리뷰어 후보에서 자동으로 제외
+- **Slack 알림 지원**: 선택적으로 Slack 웹훅을 통한 알림 전송
+- **유연한 설정**: YAML 파일을 통한 리뷰어 관리 및 설정
 
-If you are new, there's also a simpler introduction in the
-[Hello world JavaScript action repository](https://github.com/actions/hello-world-javascript-action).
+## 📦 설치 및 사용법
 
-## Create Your Own Action
+### 1. 리뷰어 설정 파일 생성
 
-To create your own action, you can use this repository as a template! Just
-follow the below instructions:
+프로젝트 루트에 `.github/reviewers.yml` 파일을 생성하고 리뷰어 목록을
+정의합니다:
 
-1. Click the **Use this template** button at the top of the repository
-1. Select **Create a new repository**
-1. Select an owner and name for your new repository
-1. Click **Create repository**
-1. Clone your new repository
+```yaml
+reviewers:
+  - githubName: '김개발'
+    slackMention: '<@U1234567>' // Slack 사용자 ID
+  - githubName: '박코딩'
+    slackMention: '<@U2345678>' // Slack 사용자 ID
+```
 
-> [!IMPORTANT]
->
-> Make sure to remove or update the [`CODEOWNERS`](./CODEOWNERS) file! For
-> details on how to use this file, see
-> [About code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).
+### 2. 워크플로우 파일 생성
 
-## Initial Setup
+`.github/workflows/reviewer-assignment.yml` 파일을 생성합니다:
 
-After you've cloned the repository to your local machine or codespace, you'll
-need to perform some initial setup steps before you can develop your action.
+```yaml
+name: 🎯 PR 리뷰어 자동 할당
 
-> [!NOTE]
->
-> You'll need to have a reasonably modern version of
-> [Node.js](https://nodejs.org) handy (20.x or later should work!). If you are
-> using a version manager like [`nodenv`](https://github.com/nodenv/nodenv) or
-> [`fnm`](https://github.com/Schniz/fnm), this template has a `.node-version`
-> file at the root of the repository that can be used to automatically switch to
-> the correct version when you `cd` into the repository. Additionally, this
-> `.node-version` file is used by GitHub Actions in any `actions/setup-node`
-> actions.
+on:
+  pull_request:
+    types: [opened, reopened]
 
-1. :hammer_and_wrench: Install the dependencies
+jobs:
+  assign-reviewers:
+    name: 리뷰어 할당
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
 
-   ```bash
-   npm install
-   ```
+      - name: 랜덤 리뷰어 할당
+        uses: allra/allra-reviewer-assignment@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }} # 선택사항
+          reviewers-config-path: '.github/reviewers.yml' # 기본값
+          max-reviewers: '3' # 기본값
+```
 
-1. :building_construction: Package the TypeScript for distribution
+## ⚙️ 입력 파라미터
 
-   ```bash
-   npm run bundle
-   ```
+| 파라미터                | 필수 여부   | 기본값                  | 설명                                              |
+| ----------------------- | ----------- | ----------------------- | ------------------------------------------------- |
+| `github-token`          | ✅ **필수** | `${{ github.token }}`   | GitHub API 인증을 위한 토큰                       |
+| `slack-webhook-url`     | ❌ 선택     | -                       | Slack 알림용 웹훅 URL (비어있으면 알림 전송 안함) |
+| `reviewers-config-path` | ❌ 선택     | `.github/reviewers.yml` | 리뷰어 설정 파일의 경로                           |
+| `max-reviewers`         | ❌ 선택     | `3`                     | 할당할 최대 리뷰어 수                             |
 
-1. :white_check_mark: Run the tests
+## 📤 출력
 
-   ```bash
-   $ npm test
+| 출력명               | 설명                                            |
+| -------------------- | ----------------------------------------------- |
+| `assigned-reviewers` | 할당된 리뷰어들의 GitHub 사용자명 (쉼표로 구분) |
 
-   PASS  ./index.test.js
-     ✓ throws invalid number (3ms)
-     ✓ wait 500 ms (504ms)
-     ✓ test runs (95ms)
+## 💬 Slack 알림
 
-   ...
-   ```
+Slack 웹훅 URL을 설정하면 다음과 같은 형식으로 알림을 전송합니다:
 
-## Update the Action Metadata
+```
+<@U1234567> <@U2345678> <@U3456789>
+리뷰어로 할당되었습니다!!
 
-The [`action.yml`](action.yml) file defines metadata about your action, such as
-input(s) and output(s). For details about this file, see
-[Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions).
+• PR 제목: 로그인 버그 수정
+• 담당자: allra
+• 리뷰어: 김개발, 박코딩, 이프론트
+• 리뷰하러 가기 >> https://github.com/owner/repo/pull/123
+```
 
-When you copy this repository, update `action.yml` with the name, description,
-inputs, and outputs for your action.
+### Slack 웹훅 설정 방법
 
-## Update the Action Code
+1. Slack 앱에서 Incoming Webhooks 기능 활성화
+2. 웹훅 URL을 GitHub Secrets에 `SLACK_WEBHOOK_URL`로 등록
+3. 리뷰어 설정에서 `slackMention` 필드에 Slack 사용자 ID 추가
 
-The [`src/`](./src/) directory is the heart of your action! This contains the
-source code that will be run when your action is invoked. You can replace the
-contents of this directory with your own code.
+## 🔧 동작 원리
 
-There are a few things to keep in mind when writing your action code:
+1. **트리거**: PR이 생성되거나 재오픈될 때 액션이 실행됩니다
+2. **설정 로드**: 지정된 경로에서 리뷰어 설정 파일을 읽어옵니다
+3. **후보 필터링**: PR 작성자를 리뷰어 후보에서 제외합니다
+4. **랜덤 선택**: Fisher-Yates 셔플 알고리즘으로 랜덤하게 리뷰어를 선택합니다
+5. **GitHub 할당**: GitHub API를 통해 선택된 리뷰어들을 PR에 할당합니다
+6. **Slack 알림**: (선택사항) Slack으로 할당 알림을 전송합니다
 
-- Most GitHub Actions toolkit and CI/CD operations are processed asynchronously.
-  In `main.ts`, you will see that the action is run in an `async` function.
+## 📁 프로젝트 구조
 
-  ```javascript
-  import * as core from '@actions/core'
-  //...
+```
+src/
+├── main.ts              # 메인 오케스트레이션 로직
+├── reviewer-selector.ts # 리뷰어 선택 및 설정 파일 로드
+├── slack-notifier.ts    # Slack 웹훅 알림 기능
+├── github-client.ts     # GitHub API 연동
+└── types.ts            # 공용 타입 정의
 
-  async function run() {
-    try {
-      //...
-    } catch (error) {
-      core.setFailed(error.message)
-    }
-  }
-  ```
+__tests__/              # 포괄적인 단위 테스트
+├── main.test.ts
+├── reviewer-selector.test.ts
+├── slack-notifier.test.ts
+└── github-client.test.ts
+```
 
-  For more information about the GitHub Actions toolkit, see the
-  [documentation](https://github.com/actions/toolkit/blob/main/README.md).
+## 🛠️ 개발자 가이드
 
-So, what are you waiting for? Go ahead and start customizing your action!
+### 의존성 설치
 
-1. Create a new branch
+```bash
+npm install
+```
 
-   ```bash
-   git checkout -b releases/v1
-   ```
+### 개발 및 빌드
 
-1. Replace the contents of `src/` with your action code
-1. Add tests to `__tests__/` for your source code
-1. Format, test, and build the action
+```bash
+# 코드 포맷팅
+npm run format:write
 
-   ```bash
-   npm run all
-   ```
+# 린트 검사
+npm run lint
 
-   > This step is important! It will run [`rollup`](https://rollupjs.org/) to
-   > build the final JavaScript action code with all dependencies included. If
-   > you do not run this step, your action will not work correctly when it is
-   > used in a workflow.
+# 테스트 실행
+npm test
 
-1. (Optional) Test your action locally
+# 프로덕션 빌드
+npm run bundle
+```
 
-   The [`@github/local-action`](https://github.com/github/local-action) utility
-   can be used to test your action locally. It is a simple command-line tool
-   that "stubs" (or simulates) the GitHub Actions Toolkit. This way, you can run
-   your TypeScript action locally without having to commit and push your changes
-   to a repository.
+### 로컬 테스트
 
-   The `local-action` utility can be run in the following ways:
-   - Visual Studio Code Debugger
+```bash
+# .env 파일을 생성하고 환경변수 설정
+echo "INPUT_GITHUB-TOKEN=your-token" > .env
+echo "INPUT_REVIEWERS-CONFIG-PATH=.github/reviewers.yml" >> .env
+echo "INPUT_MAX-REVIEWERS=3" >> .env
 
-     Make sure to review and, if needed, update
-     [`.vscode/launch.json`](./.vscode/launch.json)
+# 로컬에서 액션 실행
+npm run local-action
+```
 
-   - Terminal/Command Prompt
+## 🚨 주의사항
 
-     ```bash
-     # npx @github/local action <action-yaml-path> <entrypoint> <dotenv-file>
-     npx @github/local-action . src/main.ts .env
-     ```
+- **토큰 권한**: `GITHUB_TOKEN`에는 PR 리뷰어 할당 권한이 필요합니다
+- **설정 파일**: 리뷰어 설정 파일이 없으면 액션이 실패합니다
+- **최소 리뷰어**: 리뷰어 후보가 요청된 수보다 적으면 모든 후보를 선택합니다
+- **PR 작성자**: PR 작성자는 항상 리뷰어 후보에서 제외됩니다
 
-   You can provide a `.env` file to the `local-action` CLI to set environment
-   variables used by the GitHub Actions Toolkit. For example, setting inputs and
-   event payload data used by your action. For more information, see the example
-   file, [`.env.example`](./.env.example), and the
-   [GitHub Actions Documentation](https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables).
+## 📈 고급 사용법
 
-1. Commit your changes
+### 조건부 실행
 
-   ```bash
-   git add .
-   git commit -m "My first action is ready!"
-   ```
+특정 조건에서만 리뷰어를 할당하고 싶다면:
 
-1. Push them to your repository
+```yaml
+jobs:
+  assign-reviewers:
+    runs-on: ubuntu-latest
+    # draft PR에서는 실행하지 않음
+    if: github.event.pull_request.draft == false
+    steps:
+      # ... 액션 단계들
+```
 
-   ```bash
-   git push -u origin releases/v1
-   ```
-
-1. Create a pull request and get feedback on your action
-1. Merge the pull request into the `main` branch
-
-Your action is now published! :rocket:
-
-For information about versioning your action, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-## Validate the Action
-
-You can now validate the action by referencing it in a workflow file. For
-example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
-action in the same repository.
+### 다른 액션과 연계
 
 ```yaml
 steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
-
-  - name: Test Local Action
-    id: test-action
-    uses: ./
+  - name: 리뷰어 할당
+    id: assign
+    uses: allra/allra-reviewer-assignment@v1
     with:
-      milliseconds: 1000
+      github-token: ${{ secrets.GITHUB_TOKEN }}
 
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
+  - name: 할당된 리뷰어 출력
+    run: echo "할당된 리뷰어: ${{ steps.assign.outputs.assigned-reviewers }}"
 ```
 
-For example workflow runs, check out the
-[Actions tab](https://github.com/actions/typescript-action/actions)! :rocket:
+## 🤝 기여하기
 
-## Usage
+1. 이 저장소를 포크합니다
+2. 기능 브랜치를 생성합니다 (`git checkout -b feature/새기능`)
+3. 변경사항을 커밋합니다 (`git commit -am '새 기능 추가'`)
+4. 브랜치에 푸시합니다 (`git push origin feature/새기능`)
+5. Pull Request를 생성합니다
 
-After testing, you can create version tag(s) that developers can use to
-reference different stable versions of your action. For more information, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
+## 📄 라이선스
 
-To include the action in a workflow in another repository, you can use the
-`uses` syntax with the `@` symbol to reference a specific branch, tag, or commit
-hash.
+이 프로젝트는 [MIT 라이선스](LICENSE) 하에 배포됩니다.
 
-```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
+## 🔗 관련 링크
 
-  - name: Test Local Action
-    id: test-action
-    uses: actions/typescript-action@v1 # Commit with the `v1` tag
-    with:
-      milliseconds: 1000
+- [GitHub Actions 공식 문서](https://docs.github.com/ko/actions)
+- [Slack Incoming Webhooks](https://api.slack.com/messaging/webhooks)
+- [YAML 문법 가이드](https://yaml.org/spec/1.2/spec.html)
 
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
-```
+---
 
-## Publishing a New Release
-
-This project includes a helper script, [`script/release`](./script/release)
-designed to streamline the process of tagging and pushing new releases for
-GitHub Actions.
-
-GitHub Actions allows users to select a specific version of the action to use,
-based on release tags. This script simplifies this process by performing the
-following steps:
-
-1. **Retrieving the latest release tag:** The script starts by fetching the most
-   recent SemVer release tag of the current branch, by looking at the local data
-   available in your repository.
-1. **Prompting for a new release tag:** The user is then prompted to enter a new
-   release tag. To assist with this, the script displays the tag retrieved in
-   the previous step, and validates the format of the inputted tag (vX.X.X). The
-   user is also reminded to update the version field in package.json.
-1. **Tagging the new release:** The script then tags a new release and syncs the
-   separate major tag (e.g. v1, v2) with the new release tag (e.g. v1.0.0,
-   v2.1.2). When the user is creating a new major release, the script
-   auto-detects this and creates a `releases/v#` branch for the previous major
-   version.
-1. **Pushing changes to remote:** Finally, the script pushes the necessary
-   commits, tags and branches to the remote repository. From here, you will need
-   to create a new release in GitHub so users can easily reference the new tags
-   in their workflows.
-
-## Dependency License Management
-
-This template includes a GitHub Actions workflow,
-[`licensed.yml`](./.github/workflows/licensed.yml), that uses
-[Licensed](https://github.com/licensee/licensed) to check for dependencies with
-missing or non-compliant licenses. This workflow is initially disabled. To
-enable the workflow, follow the below steps.
-
-1. Open [`licensed.yml`](./.github/workflows/licensed.yml)
-1. Uncomment the following lines:
-
-   ```yaml
-   # pull_request:
-   #   branches:
-   #     - main
-   # push:
-   #   branches:
-   #     - main
-   ```
-
-1. Save and commit the changes
-
-Once complete, this workflow will run any time a pull request is created or
-changes pushed directly to `main`. If the workflow detects any dependencies with
-missing or non-compliant licenses, it will fail the workflow and provide details
-on the issue(s) found.
-
-### Updating Licenses
-
-Whenever you install or update dependencies, you can use the Licensed CLI to
-update the licenses database. To install Licensed, see the project's
-[Readme](https://github.com/licensee/licensed?tab=readme-ov-file#installation).
-
-To update the cached licenses, run the following command:
-
-```bash
-licensed cache
-```
-
-To check the status of cached licenses, run the following command:
-
-```bash
-licensed status
-```
+**Made with ❤️ by Allra-Fintech**
