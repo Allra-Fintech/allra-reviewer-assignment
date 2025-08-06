@@ -52,7 +52,7 @@ jobs:
         uses: allra/allra-reviewer-assignment@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }} # 선택사항
+          slack-webhook-url: ${{ secrets.PR_REVIEW_SLACK_WEBHOOK }} # 선택사항
           reviewers-config-path: '.github/reviewers.yml' # 기본값
           max-reviewers: '3' # 기본값
 ```
@@ -89,7 +89,7 @@ Slack 웹훅 URL을 설정하면 다음과 같은 형식으로 알림을 전송�
 ### Slack 웹훅 설정 방법
 
 1. Slack 앱에서 Incoming Webhooks 기능 활성화
-2. 웹훅 URL을 GitHub Secrets에 `SLACK_WEBHOOK_URL`로 등록
+2. 웹훅 URL을 GitHub Secrets에 `PR_REVIEW_SLACK_WEBHOOK`로 등록
 3. 리뷰어 설정에서 `slackMention` 필드에 Slack 사용자 ID 추가
 
 ## 🔧 동작 원리
