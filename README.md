@@ -1,6 +1,6 @@
 # 📋 PR 리뷰어 자동 할당 액션
 
-> 토스 스타일의 PR 리뷰 프로세스를 자동화하는 GitHub Action입니다.
+> PR 리뷰 프로세스를 자동화하는 GitHub Action입니다.
 
 [![GitHub Super-Linter](https://github.com/gnoyes/allra-reviewer-assignment/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
 ![CI](https://github.com/gnoyes/allra-reviewer-assignment/actions/workflows/ci.yml/badge.svg)
