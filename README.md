@@ -6,6 +6,8 @@
 ![CI](https://github.com/gnoyes/allra-reviewer-assignment/actions/workflows/ci.yml/badge.svg)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
+**Language**: **한국어** | [English](./README.en.md)
+
 ## 🚀 주요 기능
 
 - **자동 리뷰어 할당**: PR이 생성되거나 재오픈될 때 랜덤하게 3명의 리뷰어를 자동
