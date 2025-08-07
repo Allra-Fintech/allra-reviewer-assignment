@@ -24,6 +24,10 @@ const mockGithubContext = {
         title: 'Test PR Title',
         user: { login: 'test-author' }
       }
+    },
+    repo: {
+      owner: 'test-owner',
+      repo: 'test-repo'
     }
   }
 }
