@@ -1,29 +1,10 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import axios from 'axios'
-import type {
-  Reviewer,
-  SlackMessage,
-  SupportedLanguage,
-  MessageTemplates
-} from './types.js'
+import { slackMessageTemplates } from './messageTemplates.js'
+import type { Reviewer, SlackMessage, SupportedLanguage } from './types.js'
 
 export class SlackNotifier {
-  private messageTemplates: Record<SupportedLanguage, MessageTemplates> = {
-    ko: {
-      assignmentHeader: '리뷰어로 할당되었습니다!!',
-      prTitleLabel: 'PR 제목',
-      authorLabel: '담당자',
-      reviewersLabel: '리뷰어'
-    },
-    en: {
-      assignmentHeader: 'You have been assigned as reviewers!!',
-      prTitleLabel: 'PR Title',
-      authorLabel: 'Author',
-      reviewersLabel: 'Reviewers'
-    }
-  }
-
   constructor(
     private webhookUrl: string,
     private language: SupportedLanguage = 'ko'
@@ -34,6 +15,8 @@ export class SlackNotifier {
       const prUrl = github.context.payload.pull_request?.html_url
       const prTitle = github.context.payload.pull_request?.title
       const prAuthor = github.context.payload.pull_request?.user?.login
+      const owner = github.context.repo.owner
+      const repo = github.context.repo.repo
 
       // 멘션할 리뷰어들 목록 생성
       const mentions = reviewers
@@ -41,8 +24,7 @@ export class SlackNotifier {
         .map((r) => r.slackMention)
         .join(' ')
 
-      const reviewerList = reviewers.map((r) => r.githubName).join(', ')
-      const templates = this.messageTemplates[this.language]
+      const templates = slackMessageTemplates[this.language]
 
       const payload: SlackMessage = {
         text:
@@ -50,7 +32,7 @@ export class SlackNotifier {
           `${templates.assignmentHeader} \n` +
           `• ${templates.prTitleLabel}: <${prUrl}|${prTitle}>\n` +
           `• ${templates.authorLabel}: ${prAuthor}\n` +
-          `• ${templates.reviewersLabel}: ${reviewerList}`
+          `• ${templates.repositoryLabel}: <https://github.com/${owner}/${repo}|${repo}>`
       }
 
       const result = await this.sendWebhookRequest(payload)

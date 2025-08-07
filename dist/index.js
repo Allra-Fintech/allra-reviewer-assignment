@@ -54232,23 +54232,24 @@ const {
   mergeConfig
 } = axios;
 
+const slackMessageTemplates = {
+    ko: {
+        assignmentHeader: '리뷰어로 할당되었습니다!!',
+        prTitleLabel: 'PR 제목',
+        authorLabel: '담당자',
+        repositoryLabel: '저장소'
+    },
+    en: {
+        assignmentHeader: 'You have been assigned as reviewers!!',
+        prTitleLabel: 'PR Title',
+        authorLabel: 'Author',
+        repositoryLabel: 'Repository'
+    }
+};
+
 class SlackNotifier {
     webhookUrl;
     language;
-    messageTemplates = {
-        ko: {
-            assignmentHeader: '리뷰어로 할당되었습니다!!',
-            prTitleLabel: 'PR 제목',
-            authorLabel: '담당자',
-            reviewersLabel: '리뷰어'
-        },
-        en: {
-            assignmentHeader: 'You have been assigned as reviewers!!',
-            prTitleLabel: 'PR Title',
-            authorLabel: 'Author',
-            reviewersLabel: 'Reviewers'
-        }
-    };
     constructor(webhookUrl, language = 'ko') {
         this.webhookUrl = webhookUrl;
         this.language = language;
@@ -54258,19 +54259,20 @@ class SlackNotifier {
             const prUrl = githubExports.context.payload.pull_request?.html_url;
             const prTitle = githubExports.context.payload.pull_request?.title;
             const prAuthor = githubExports.context.payload.pull_request?.user?.login;
+            const owner = githubExports.context.repo.owner;
+            const repo = githubExports.context.repo.repo;
             // 멘션할 리뷰어들 목록 생성
             const mentions = reviewers
                 .filter((r) => r.slackMention)
                 .map((r) => r.slackMention)
                 .join(' ');
-            const reviewerList = reviewers.map((r) => r.githubName).join(', ');
-            const templates = this.messageTemplates[this.language];
+            const templates = slackMessageTemplates[this.language];
             const payload = {
                 text: (mentions ? `${mentions}\n` : '') +
                     `${templates.assignmentHeader} \n` +
                     `• ${templates.prTitleLabel}: <${prUrl}|${prTitle}>\n` +
                     `• ${templates.authorLabel}: ${prAuthor}\n` +
-                    `• ${templates.reviewersLabel}: ${reviewerList}`
+                    `• ${templates.repositoryLabel}: <https://github.com/${owner}/${repo}|${repo}>`
             };
             const result = await this.sendWebhookRequest(payload);
             coreExports.info('Slack webhook notification sent successfully');

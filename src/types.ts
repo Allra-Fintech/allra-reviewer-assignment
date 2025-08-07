@@ -17,5 +17,5 @@ export interface MessageTemplates {
   assignmentHeader: string
   prTitleLabel: string
   authorLabel: string
-  reviewersLabel: string
+  repositoryLabel: string
 }
