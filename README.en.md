@@ -84,10 +84,9 @@ When Slack webhook URL is configured, sends notifications in this format:
 <@U1234567> <@U2345678> <@U3456789>
 You have been assigned as reviewers!!
 
-• PR Title: Fix login bug
+• PR Title: <https://github.com/owner/repo/pull/123|Fix login bug>
 • Author: allra
-• Reviewers: john-doe, jane-smith, mike-wilson
-• Review PR >> https://github.com/owner/repo/pull/123
+• Repository: <https://github.com/owner/repo|repo>
 ```
 
 ### Slack Webhook Setup Guide
@@ -111,6 +110,7 @@ You have been assigned as reviewers!!
 ```text
 src/
 ├── main.ts              # Main orchestration logic
+├── messageTemplates.ts  # message template management
 ├── reviewer-selector.ts # Reviewer selection and configuration loading
 ├── slack-notifier.ts    # Slack webhook notification features
 ├── github-client.ts     # GitHub API integration

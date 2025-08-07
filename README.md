@@ -82,10 +82,9 @@ Slack 웹훅 URL을 설정하면 다음과 같은 형식으로 알림을 전송�
 <@U1234567> <@U2345678> <@U3456789>
 리뷰어로 할당되었습니다!!
 
-• PR 제목: 로그인 버그 수정
+• PR 제목: <https://github.com/owner/repo/pull/123|로그인 버그 수정>
 • 담당자: allra
-• 리뷰어: 김개발, 박코딩, 이프론트
-• 리뷰하러 가기 >> https://github.com/owner/repo/pull/123
+• 저장소: <https://github.com/owner/repo|repo>
 ```
 
 ### Slack 웹훅 설정 방법
@@ -108,6 +107,7 @@ Slack 웹훅 URL을 설정하면 다음과 같은 형식으로 알림을 전송�
 ```text
 src/
 ├── main.ts              # 메인 오케스트레이션 로직
+├── messageTemplates.ts  # 메세지 템플릿 정의
 ├── reviewer-selector.ts # 리뷰어 선택 및 설정 파일 로드
 ├── slack-notifier.ts    # Slack 웹훅 알림 기능
 ├── github-client.ts     # GitHub API 연동
