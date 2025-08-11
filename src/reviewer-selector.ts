@@ -49,7 +49,6 @@ export class ReviewerSelector {
     try {
       const configFile = readFileSync(this.configPath, 'utf8')
       const config = yaml.load(configFile) as ReviewerConfig
-      console.log(config)
       return {
         reviewers: config.reviewers || [],
         fixedReviewers: config.fixedReviewers || []
