@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import * as yaml from 'js-yaml'
-import { readFileSync } from 'node:fs'
+import { readFileSync } from 'fs'
 import type { Reviewer, ReviewerConfig } from './types.js'
 
 export class ReviewerSelector {
@@ -49,6 +49,7 @@ export class ReviewerSelector {
     try {
       const configFile = readFileSync(this.configPath, 'utf8')
       const config = yaml.load(configFile) as ReviewerConfig
+      console.log(config)
       return {
         reviewers: config.reviewers || [],
         fixedReviewers: config.fixedReviewers || []
