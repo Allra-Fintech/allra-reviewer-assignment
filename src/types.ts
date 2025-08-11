@@ -5,7 +5,7 @@ export interface Reviewer {
 
 export interface ReviewerConfig {
   reviewers?: Reviewer[]
-  fixedReviewers?: Reviewer[] 
+  fixedReviewers?: Reviewer[]
 }
 
 export interface SlackMessage {

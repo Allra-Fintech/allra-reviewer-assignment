@@ -8,8 +8,14 @@ export class ReviewerSelector {
 
   selectRandomReviewers(count: number, prCreator: string): Reviewer[] {
     const candidates = this.getCandidates()
-    const reviewers = this.filterCreatorFromReviewers(prCreator, candidates.reviewers)
-    const fixedReviewers = this.filterCreatorFromReviewers(prCreator, candidates.fixedReviewers)
+    const reviewers = this.filterCreatorFromReviewers(
+      prCreator,
+      candidates.reviewers
+    )
+    const fixedReviewers = this.filterCreatorFromReviewers(
+      prCreator,
+      candidates.fixedReviewers
+    )
     const totalReviewersCount = reviewers.length + fixedReviewers.length
 
     if (totalReviewersCount <= 0) {
@@ -19,7 +25,9 @@ export class ReviewerSelector {
 
     // 후보자가 요청된 수보다 적으면 모든 후보자 선택
     if (totalReviewersCount <= count) {
-      core.info(`Only ${totalReviewersCount} reviewers available, selecting all`)
+      core.info(
+        `Only ${totalReviewersCount} reviewers available, selecting all`
+      )
       return [...fixedReviewers, ...reviewers]
     }
 
@@ -34,10 +42,7 @@ export class ReviewerSelector {
     const shuffled = targets.slice(0, count - fixedReviewers.length)
 
     // 고정 리뷰어와 랜덤으로 선택된 리뷰어를 합쳐서 반환
-    return [
-      ...fixedReviewers,
-      ...shuffled,
-    ]
+    return [...fixedReviewers, ...shuffled]
   }
 
   private getCandidates(): ReviewerConfig {
@@ -57,7 +62,10 @@ export class ReviewerSelector {
     }
   }
 
-  private filterCreatorFromReviewers(prCreator: string, reviewers?: Reviewer[]): Reviewer[] {
+  private filterCreatorFromReviewers(
+    prCreator: string,
+    reviewers?: Reviewer[]
+  ): Reviewer[] {
     return reviewers?.filter((person) => person.githubName !== prCreator) || []
   }
 }
