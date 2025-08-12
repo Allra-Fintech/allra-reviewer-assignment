@@ -31324,28 +31324,13 @@ const createTokenAuth = function createTokenAuth2(token) {
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$4 = "5.2.2";
+var VERSION$4 = "5.2.0";
 
 // pkg/dist-src/index.js
 var noop$1 = () => {
 };
 var consoleWarn = console.warn.bind(console);
 var consoleError = console.error.bind(console);
-function createLogger(logger = {}) {
-  if (typeof logger.debug !== "function") {
-    logger.debug = noop$1;
-  }
-  if (typeof logger.info !== "function") {
-    logger.info = noop$1;
-  }
-  if (typeof logger.warn !== "function") {
-    logger.warn = consoleWarn;
-  }
-  if (typeof logger.error !== "function") {
-    logger.error = consoleError;
-  }
-  return logger;
-}
 var userAgentTrail = `octokit-core.js/${VERSION$4} ${getUserAgent()}`;
 var Octokit = class {
   static {
@@ -31419,7 +31404,15 @@ var Octokit = class {
     }
     this.request = request.defaults(requestDefaults);
     this.graphql = withCustomRequest(this.request).defaults(requestDefaults);
-    this.log = createLogger(options.log);
+    this.log = Object.assign(
+      {
+        debug: noop$1,
+        info: noop$1,
+        warn: consoleWarn,
+        error: consoleError
+      },
+      options.log
+    );
     this.hook = hook;
     if (!options.authStrategy) {
       if (!options.auth) {
