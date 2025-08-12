@@ -24,11 +24,17 @@
 정의합니다:
 
 ```yaml
+# 랜덤 리뷰어 풀 (옵션)
 reviewers:
   - githubName: '김개발'
     slackMention: '<@U1234567>' # Slack 사용자 ID
   - githubName: '박코딩'
     slackMention: '<@U2345678>' # Slack 사용자 ID
+
+# 필수 리뷰어 풀 (옵션)
+fixedReviewers:
+  - githubName: '유다희'
+    slackMention: '<@U0000000>' # Slack 사용자 ID
 ```
 
 ### 2. 워크플로우 파일 생성
