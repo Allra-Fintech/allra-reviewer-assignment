@@ -8,14 +8,15 @@ export class ReviewerSelector {
 
   selectRandomReviewers(count: number, prCreator: string): Reviewer[] {
     const candidates = this.getCandidates()
-    const reviewers = this.filterCreatorFromReviewers(
-      prCreator,
-      candidates.reviewers
-    )
     const fixedReviewers = this.filterCreatorFromReviewers(
-      prCreator,
+      [prCreator],
       candidates.fixedReviewers
     )
+    const reviewers = this.filterCreatorFromReviewers(
+      [prCreator, ...fixedReviewers.map((r) => r.githubName)],
+      candidates.reviewers
+    )
+
     const totalReviewersCount = reviewers.length + fixedReviewers.length
 
     if (totalReviewersCount <= 0) {
@@ -63,9 +64,9 @@ export class ReviewerSelector {
   }
 
   private filterCreatorFromReviewers(
-    prCreator: string,
+    filterTargets: string[],
     reviewers?: Reviewer[]
   ): Reviewer[] {
-    return reviewers?.filter((person) => person.githubName !== prCreator) || []
+    return reviewers?.filter((person) => !filterTargets.includes(person.githubName)) || []
   }
 }
