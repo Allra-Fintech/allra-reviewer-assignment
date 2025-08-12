@@ -30100,6 +30100,12 @@ class ReviewerSelector {
             coreExports.info(`Only ${totalReviewersCount} reviewers available, selecting all`);
             return [...fixedReviewers, ...reviewers];
         }
+        // 지정한 수 보다 고정 리뷰어가 많으면 고정 리뷰어만 선택
+        const remainingCount = count - fixedReviewers.length;
+        if (remainingCount <= 0) {
+            coreExports.info(`All ${fixedReviewers.length} reviewers are fixed, no random selection needed`);
+            return [...fixedReviewers];
+        }
         // Fisher-Yates 셔플 알고리즘으로 랜덤 선택
         const targets = [...reviewers];
         for (let i = targets.length - 1; i > 0; i--) {
@@ -30107,7 +30113,7 @@ class ReviewerSelector {
             [targets[i], targets[j]] = [targets[j], targets[i]];
         }
         // 전체 리뷰어 수에서 고정 리뷰어 수를 제외한 나머지 리뷰어 중에서 랜덤하게 선택
-        const shuffled = targets.slice(0, count - fixedReviewers.length);
+        const shuffled = targets.slice(0, remainingCount);
         // 고정 리뷰어와 랜덤으로 선택된 리뷰어를 합쳐서 반환
         return [...fixedReviewers, ...shuffled];
     }
