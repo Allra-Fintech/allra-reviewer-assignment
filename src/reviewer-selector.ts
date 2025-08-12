@@ -67,6 +67,10 @@ export class ReviewerSelector {
     filterTargets: string[],
     reviewers?: Reviewer[]
   ): Reviewer[] {
-    return reviewers?.filter((person) => !filterTargets.includes(person.githubName)) || []
+    return (
+      reviewers?.filter(
+        (person) => !filterTargets.includes(person.githubName)
+      ) || []
+    )
   }
 }

@@ -30088,8 +30088,8 @@ class ReviewerSelector {
     }
     selectRandomReviewers(count, prCreator) {
         const candidates = this.getCandidates();
-        const reviewers = this.filterCreatorFromReviewers(prCreator, candidates.reviewers);
-        const fixedReviewers = this.filterCreatorFromReviewers(prCreator, candidates.fixedReviewers);
+        const fixedReviewers = this.filterCreatorFromReviewers([prCreator], candidates.fixedReviewers);
+        const reviewers = this.filterCreatorFromReviewers([prCreator, ...fixedReviewers.map((r) => r.githubName)], candidates.reviewers);
         const totalReviewersCount = reviewers.length + fixedReviewers.length;
         if (totalReviewersCount <= 0) {
             coreExports.warning('No available reviewers after filtering PR creator');
@@ -30128,8 +30128,8 @@ class ReviewerSelector {
             };
         }
     }
-    filterCreatorFromReviewers(prCreator, reviewers) {
-        return reviewers?.filter((person) => person.githubName !== prCreator) || [];
+    filterCreatorFromReviewers(filterTargets, reviewers) {
+        return (reviewers?.filter((person) => !filterTargets.includes(person.githubName)) || []);
     }
 }
 
