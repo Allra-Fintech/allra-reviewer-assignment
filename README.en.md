@@ -26,11 +26,17 @@ Create `.github/reviewers.yml` file in your project root and define your
 reviewer list:
 
 ```yaml
+# random reviewer pool (optional)
 reviewers:
   - githubName: 'john-doe'
     slackMention: '<@U1234567>' # Slack user ID
   - githubName: 'jane-smith'
     slackMention: '<@U2345678>' # Slack user ID
+
+# fixed reviewer pool (optional)
+fixedReviewers:
+  - githubName: 'you-die'
+    slackMention: '<@U0000000>' # Slack user ID
 ```
 
 ### 2. Create Workflow File

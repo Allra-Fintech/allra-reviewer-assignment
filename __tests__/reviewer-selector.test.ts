@@ -29,15 +29,11 @@ jest.unstable_mockModule('fs', () => ({
 const { ReviewerSelector } = await import('../src/reviewer-selector.js')
 
 describe('ReviewerSelector', () => {
-  let reviewerSelector: InstanceType<typeof ReviewerSelector>
   const mockConfigPath = '.github/reviewers.yml'
+  const reviewerSelector = new ReviewerSelector(mockConfigPath)
 
   beforeEach(() => {
-    reviewerSelector = new ReviewerSelector(mockConfigPath)
     jest.clearAllMocks()
-    // Reset mocks to default state
-    mockReadFileSync.mockReturnValue('mock yaml content')
-    mockYamlLoad.mockReturnValue({ reviewers: [] })
   })
 
   describe('selectRandomReviewers', () => {

@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import axios from 'axios'
-import { slackMessageTemplates } from './messageTemplates.js'
+import { slackMessageTemplates } from './message-templates.js'
 import type { Reviewer, SlackMessage, SupportedLanguage } from './types.js'
 
 export class SlackNotifier {
@@ -15,8 +15,7 @@ export class SlackNotifier {
       const prUrl = github.context.payload.pull_request?.html_url
       const prTitle = github.context.payload.pull_request?.title
       const prAuthor = github.context.payload.pull_request?.user?.login
-      const owner = github.context.repo.owner
-      const repo = github.context.repo.repo
+      const { owner, repo } = github.context.repo
 
       // 멘션할 리뷰어들 목록 생성
       const mentions = reviewers
