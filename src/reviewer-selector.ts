@@ -75,10 +75,12 @@ export class ReviewerSelector {
     filterTargets: string[],
     reviewers?: Reviewer[]
   ): Reviewer[] {
+    const exclude = new Set(filterTargets.map((s) => s.toLowerCase()))
     return (
-      reviewers?.filter(
-        (person) => !filterTargets.includes(person.githubName)
-      ) || []
+      reviewers?.filter((person) => {
+        const name = person?.githubName
+        return typeof name === 'string' && !exclude.has(name.toLowerCase())
+      }) || []
     )
   }
 
