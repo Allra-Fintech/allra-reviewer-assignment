@@ -30087,35 +30087,74 @@ class ReviewerSelector {
         this.configPath = configPath;
     }
     selectRandomReviewers(count, prCreator) {
-        const candidates = this.getCandidates().filter((person) => person.githubName !== prCreator);
-        if (candidates.length === 0) {
+        const candidates = this.getCandidates();
+        const fixedReviewers = this.filterCreatorFromReviewers([prCreator], candidates.fixedReviewers);
+        const reviewers = this.filterCreatorFromReviewers([prCreator, ...fixedReviewers.map((r) => r.githubName)], candidates.reviewers);
+        const totalReviewersCount = reviewers.length + fixedReviewers.length;
+        if (totalReviewersCount <= 0) {
             coreExports.warning('No available reviewers after filtering PR creator');
             return [];
         }
         // 후보자가 요청된 수보다 적으면 모든 후보자 선택
-        if (candidates.length <= count) {
-            coreExports.info(`Only ${candidates.length} reviewers available, selecting all`);
-            return candidates;
+        if (totalReviewersCount <= count) {
+            coreExports.info(`Only ${totalReviewersCount} reviewers available, selecting all`);
+            return [...fixedReviewers, ...reviewers];
+        }
+        // 지정한 수 보다 고정 리뷰어가 많으면 고정 리뷰어만 선택
+        const remainingCount = count - fixedReviewers.length;
+        if (remainingCount <= 0) {
+            coreExports.info(`All ${fixedReviewers.length} reviewers are fixed, no random selection needed`);
+            return [...fixedReviewers];
         }
         // Fisher-Yates 셔플 알고리즘으로 랜덤 선택
-        const shuffled = [...candidates];
-        for (let i = shuffled.length - 1; i > 0; i--) {
+        const targets = [...reviewers];
+        for (let i = targets.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            [targets[i], targets[j]] = [targets[j], targets[i]];
         }
-        return shuffled.slice(0, count);
+        // 전체 리뷰어 수에서 고정 리뷰어 수를 제외한 나머지 리뷰어 중에서 랜덤하게 선택
+        const shuffled = targets.slice(0, remainingCount);
+        // 고정 리뷰어와 랜덤으로 선택된 리뷰어를 합쳐서 반환
+        return [...fixedReviewers, ...shuffled];
     }
     getCandidates() {
         try {
             const configFile = readFileSync(this.configPath, 'utf8');
             const config = load(configFile);
-            return config.reviewers || [];
+            const reviewers = this.dedupe(this.asArray(config.reviewers));
+            const fixedReviewers = this.dedupe(this.asArray(config.fixedReviewers));
+            return { reviewers, fixedReviewers };
         }
         catch (error) {
             coreExports.error(`Failed to load reviewers config: ${error}`);
-            return [];
+            return {
+                reviewers: [],
+                fixedReviewers: []
+            };
         }
     }
+    filterCreatorFromReviewers(filterTargets, reviewers) {
+        const exclude = new Set(filterTargets.map((s) => s.toLowerCase()));
+        return (reviewers?.filter((person) => {
+            const name = person?.githubName;
+            return typeof name === 'string' && !exclude.has(name.toLowerCase());
+        }) || []);
+    }
+    // Normalize, validate shape, and de-duplicate by githubName (case-insensitive)
+    asArray = (arr) => Array.isArray(arr) ? arr : [];
+    dedupe = (arr) => {
+        const seen = new Set();
+        return arr.filter((r) => {
+            const name = r?.githubName;
+            if (typeof name !== 'string' || name.length === 0)
+                return false;
+            const key = name.toLowerCase();
+            if (seen.has(key))
+                return false;
+            seen.add(key);
+            return true;
+        });
+    };
 }
 
 var github = {};
@@ -30154,6 +30193,7 @@ function requireContext () {
 	        this.action = process.env.GITHUB_ACTION;
 	        this.actor = process.env.GITHUB_ACTOR;
 	        this.job = process.env.GITHUB_JOB;
+	        this.runAttempt = parseInt(process.env.GITHUB_RUN_ATTEMPT, 10);
 	        this.runNumber = parseInt(process.env.GITHUB_RUN_NUMBER, 10);
 	        this.runId = parseInt(process.env.GITHUB_RUN_ID, 10);
 	        this.apiUrl = (_a = process.env.GITHUB_API_URL) !== null && _a !== void 0 ? _a : `https://api.github.com`;
@@ -54259,8 +54299,7 @@ class SlackNotifier {
             const prUrl = githubExports.context.payload.pull_request?.html_url;
             const prTitle = githubExports.context.payload.pull_request?.title;
             const prAuthor = githubExports.context.payload.pull_request?.user?.login;
-            const owner = githubExports.context.repo.owner;
-            const repo = githubExports.context.repo.repo;
+            const { owner, repo } = githubExports.context.repo;
             // 멘션할 리뷰어들 목록 생성
             const mentions = reviewers
                 .filter((r) => r.slackMention)
