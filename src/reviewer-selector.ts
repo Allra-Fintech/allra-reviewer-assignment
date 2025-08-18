@@ -59,10 +59,9 @@ export class ReviewerSelector {
     try {
       const configFile = readFileSync(this.configPath, 'utf8')
       const config = yaml.load(configFile) as ReviewerConfig
-      return {
-        reviewers: config.reviewers || [],
-        fixedReviewers: config.fixedReviewers || []
-      }
+      const reviewers = this.dedupe(this.asArray(config.reviewers))
+      const fixedReviewers = this.dedupe(this.asArray(config.fixedReviewers))
+      return { reviewers, fixedReviewers }
     } catch (error) {
       core.error(`Failed to load reviewers config: ${error}`)
       return {
@@ -81,5 +80,21 @@ export class ReviewerSelector {
         (person) => !filterTargets.includes(person.githubName)
       ) || []
     )
+  }
+
+  // Normalize, validate shape, and de-duplicate by githubName (case-insensitive)
+  private asArray = (arr: unknown): Reviewer[] =>
+    Array.isArray(arr) ? (arr as Reviewer[]) : []
+
+  private dedupe = (arr: Reviewer[]): Reviewer[] => {
+    const seen = new Set<string>()
+    return arr.filter((r) => {
+      const name = r?.githubName
+      if (typeof name !== 'string' || name.length === 0) return false
+      const key = name.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
   }
 }
