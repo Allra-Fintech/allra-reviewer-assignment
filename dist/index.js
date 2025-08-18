@@ -30121,10 +30121,9 @@ class ReviewerSelector {
         try {
             const configFile = readFileSync(this.configPath, 'utf8');
             const config = load(configFile);
-            return {
-                reviewers: config.reviewers || [],
-                fixedReviewers: config.fixedReviewers || []
-            };
+            const reviewers = this.dedupe(this.asArray(config.reviewers));
+            const fixedReviewers = this.dedupe(this.asArray(config.fixedReviewers));
+            return { reviewers, fixedReviewers };
         }
         catch (error) {
             coreExports.error(`Failed to load reviewers config: ${error}`);
@@ -30135,8 +30134,27 @@ class ReviewerSelector {
         }
     }
     filterCreatorFromReviewers(filterTargets, reviewers) {
-        return (reviewers?.filter((person) => !filterTargets.includes(person.githubName)) || []);
+        const exclude = new Set(filterTargets.map((s) => s.toLowerCase()));
+        return (reviewers?.filter((person) => {
+            const name = person?.githubName;
+            return typeof name === 'string' && !exclude.has(name.toLowerCase());
+        }) || []);
     }
+    // Normalize, validate shape, and de-duplicate by githubName (case-insensitive)
+    asArray = (arr) => Array.isArray(arr) ? arr : [];
+    dedupe = (arr) => {
+        const seen = new Set();
+        return arr.filter((r) => {
+            const name = r?.githubName;
+            if (typeof name !== 'string' || name.length === 0)
+                return false;
+            const key = name.toLowerCase();
+            if (seen.has(key))
+                return false;
+            seen.add(key);
+            return true;
+        });
+    };
 }
 
 var github = {};
