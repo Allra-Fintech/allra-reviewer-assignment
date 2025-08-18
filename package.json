@@ -1,7 +1,7 @@
 {
   "name": "allra-reviewer-assignment",
   "description": "Auto assign reviewers for pull requests with random 3 selection",
-  "version": "1.1.0",
+  "version": "1.0.2",
   "author": "allra",
   "type": "module",
   "private": true,
