@@ -30117,19 +30117,30 @@ class ReviewerSelector {
         // 고정 리뷰어와 랜덤으로 선택된 리뷰어를 합쳐서 반환
         return [...fixedReviewers, ...shuffled];
     }
+    // members → fixedReviewers → reviewers 순으로 githubName 의 slackMention 을 찾는다
+    findSlackMention(githubName) {
+        const { members, fixedReviewers, reviewers } = this.getCandidates();
+        const key = githubName.toLowerCase();
+        return [members, fixedReviewers, reviewers]
+            .flatMap((list) => list ?? [])
+            .find((r) => r.githubName.toLowerCase() === key && r.slackMention)
+            ?.slackMention;
+    }
     getCandidates() {
         try {
             const configFile = readFileSync(this.configPath, 'utf8');
             const config = load(configFile);
             const reviewers = this.dedupe(this.asArray(config.reviewers));
             const fixedReviewers = this.dedupe(this.asArray(config.fixedReviewers));
-            return { reviewers, fixedReviewers };
+            const members = this.dedupe(this.asArray(config.members));
+            return { reviewers, fixedReviewers, members };
         }
         catch (error) {
             coreExports.error(`Failed to load reviewers config: ${error}`);
             return {
                 reviewers: [],
-                fixedReviewers: []
+                fixedReviewers: [],
+                members: []
             };
         }
     }
@@ -54294,7 +54305,7 @@ class SlackNotifier {
         this.webhookUrl = webhookUrl;
         this.language = language;
     }
-    async sendReviewerNotification(reviewers) {
+    async sendReviewerNotification(reviewers, authorMention) {
         try {
             const prUrl = githubExports.context.payload.pull_request?.html_url;
             const prTitle = githubExports.context.payload.pull_request?.title;
@@ -54310,7 +54321,7 @@ class SlackNotifier {
                 text: (mentions ? `${mentions}\n` : '') +
                     `${templates.assignmentHeader} \n` +
                     `• ${templates.prTitleLabel}: <${prUrl}|${prTitle}>\n` +
-                    `• ${templates.authorLabel}: ${prAuthor}\n` +
+                    `• ${templates.authorLabel}: ${authorMention ?? prAuthor}\n` +
                     `• ${templates.repositoryLabel}: <https://github.com/${owner}/${repo}|${repo}>`
             };
             const result = await this.sendWebhookRequest(payload);
@@ -54407,7 +54418,7 @@ async function run() {
         // Slack 알림 전송 (선택사항)
         if (slackWebhookUrl) {
             const slackNotifier = new SlackNotifier(slackWebhookUrl, language || 'ko');
-            await slackNotifier.sendReviewerNotification(selectedReviewers);
+            await slackNotifier.sendReviewerNotification(selectedReviewers, reviewerSelector.findSlackMention(prCreator));
         }
     }
     catch (error) {

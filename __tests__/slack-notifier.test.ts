@@ -91,6 +91,29 @@ describe('SlackNotifier', () => {
       )
     })
 
+    it('should show author slack mention when provided', async () => {
+      mock.onPost(mockWebhookUrl).reply(200, 'success')
+
+      await slackNotifier.sendReviewerNotification(
+        [{ githubName: 'reviewer1', slackMention: '<@U123>' }],
+        '<@UAUTHOR>'
+      )
+
+      const { text } = JSON.parse(mock.history.post.at(-1)?.data)
+      expect(text).toContain('• 담당자: <@UAUTHOR>\n')
+    })
+
+    it('should fall back to GitHub login when author mention is missing', async () => {
+      mock.onPost(mockWebhookUrl).reply(200, 'success')
+
+      await slackNotifier.sendReviewerNotification([
+        { githubName: 'reviewer1' }
+      ])
+
+      const { text } = JSON.parse(mock.history.post.at(-1)?.data)
+      expect(text).toContain('• 담당자: test-author\n')
+    })
+
     it('should handle HTTP errors gracefully', async () => {
       mock.onPost(mockWebhookUrl).reply(500, 'Internal Server Error')
       const mockReviewers = [{ githubName: 'reviewer1' }]

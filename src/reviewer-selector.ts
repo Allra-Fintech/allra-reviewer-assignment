@@ -55,18 +55,30 @@ export class ReviewerSelector {
     return [...fixedReviewers, ...shuffled]
   }
 
+  // members → fixedReviewers → reviewers 순으로 githubName 의 slackMention 을 찾는다
+  findSlackMention(githubName: string): string | undefined {
+    const { members, fixedReviewers, reviewers } = this.getCandidates()
+    const key = githubName.toLowerCase()
+    return [members, fixedReviewers, reviewers]
+      .flatMap((list) => list ?? [])
+      .find((r) => r.githubName.toLowerCase() === key && r.slackMention)
+      ?.slackMention
+  }
+
   private getCandidates(): ReviewerConfig {
     try {
       const configFile = readFileSync(this.configPath, 'utf8')
       const config = yaml.load(configFile) as ReviewerConfig
       const reviewers = this.dedupe(this.asArray(config.reviewers))
       const fixedReviewers = this.dedupe(this.asArray(config.fixedReviewers))
-      return { reviewers, fixedReviewers }
+      const members = this.dedupe(this.asArray(config.members))
+      return { reviewers, fixedReviewers, members }
     } catch (error) {
       core.error(`Failed to load reviewers config: ${error}`)
       return {
         reviewers: [],
-        fixedReviewers: []
+        fixedReviewers: [],
+        members: []
       }
     }
   }

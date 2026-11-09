@@ -54,7 +54,10 @@ export async function run(): Promise<void> {
     // Slack 알림 전송 (선택사항)
     if (slackWebhookUrl) {
       const slackNotifier = new SlackNotifier(slackWebhookUrl, language || 'ko')
-      await slackNotifier.sendReviewerNotification(selectedReviewers)
+      await slackNotifier.sendReviewerNotification(
+        selectedReviewers,
+        reviewerSelector.findSlackMention(prCreator)
+      )
     }
   } catch (error) {
     // Fail the workflow run if an error occurs

@@ -10,7 +10,10 @@ export class SlackNotifier {
     private language: SupportedLanguage = 'ko'
   ) {}
 
-  async sendReviewerNotification(reviewers: Reviewer[]) {
+  async sendReviewerNotification(
+    reviewers: Reviewer[],
+    authorMention?: string
+  ) {
     try {
       const prUrl = github.context.payload.pull_request?.html_url
       const prTitle = github.context.payload.pull_request?.title
@@ -30,7 +33,7 @@ export class SlackNotifier {
           (mentions ? `${mentions}\n` : '') +
           `${templates.assignmentHeader} \n` +
           `• ${templates.prTitleLabel}: <${prUrl}|${prTitle}>\n` +
-          `• ${templates.authorLabel}: ${prAuthor}\n` +
+          `• ${templates.authorLabel}: ${authorMention ?? prAuthor}\n` +
           `• ${templates.repositoryLabel}: <https://github.com/${owner}/${repo}|${repo}>`
       }
 

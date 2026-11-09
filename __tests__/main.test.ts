@@ -33,6 +33,9 @@ const mockAssignReviewers = jest.fn() as jest.MockedFunction<
 const mockGetPRCreator = jest.fn() as jest.MockedFunction<
   () => string | undefined
 >
+const mockFindSlackMention = jest.fn() as jest.MockedFunction<
+  (githubName: string) => string | undefined
+>
 const mockValidatePRContext = jest.fn() as jest.MockedFunction<() => boolean>
 
 // Mock @actions/core
@@ -43,6 +46,7 @@ jest.unstable_mockModule('../src/reviewer-selector.js', () => ({
   ReviewerSelector: class {
     constructor() {}
     selectRandomReviewers = mockSelectRandomReviewers
+    findSlackMention = mockFindSlackMention
   }
 }))
 
@@ -98,6 +102,7 @@ describe('main.ts', () => {
     mockSelectRandomReviewers.mockReturnValue(mockReviewers)
     mockAssignReviewers.mockImplementation(() => Promise.resolve())
     mockSendReviewerNotification.mockImplementation(() => Promise.resolve())
+    mockFindSlackMention.mockReturnValue('<@UAUTHOR>')
   })
 
   it('should orchestrate the full reviewer assignment flow', async () => {
@@ -107,7 +112,11 @@ describe('main.ts', () => {
     expect(mockGetPRCreator).toHaveBeenCalled()
     expect(mockSelectRandomReviewers).toHaveBeenCalledWith(3, 'test-author')
     expect(mockAssignReviewers).toHaveBeenCalledWith(mockReviewers)
-    expect(mockSendReviewerNotification).toHaveBeenCalledWith(mockReviewers)
+    expect(mockFindSlackMention).toHaveBeenCalledWith('test-author')
+    expect(mockSendReviewerNotification).toHaveBeenCalledWith(
+      mockReviewers,
+      '<@UAUTHOR>'
+    )
   })
 
   it('should handle missing GitHub token', async () => {

@@ -140,4 +140,38 @@ describe('ReviewerSelector', () => {
       expect(result).toHaveLength(3)
     })
   })
+
+  describe('findSlackMention', () => {
+    it('should prefer members over reviewer lists', () => {
+      mockReadFileSync.mockReturnValue('mock yaml content')
+      mockYamlLoad.mockReturnValue({
+        members: [{ githubName: 'Author', slackMention: '<@UMEMBER>' }],
+        fixedReviewers: [{ githubName: 'author', slackMention: '<@UFIXED>' }]
+      })
+
+      expect(reviewerSelector.findSlackMention('author')).toBe('<@UMEMBER>')
+    })
+
+    it('should fall back to fixedReviewers and reviewers when not in members', () => {
+      mockReadFileSync.mockReturnValue('mock yaml content')
+      mockYamlLoad.mockReturnValue({
+        members: [{ githubName: 'other', slackMention: '<@UOTHER>' }],
+        fixedReviewers: [{ githubName: 'fixed', slackMention: '<@UFIXED>' }],
+        reviewers: [{ githubName: 'random', slackMention: '<@URANDOM>' }]
+      })
+
+      expect(reviewerSelector.findSlackMention('fixed')).toBe('<@UFIXED>')
+      expect(reviewerSelector.findSlackMention('random')).toBe('<@URANDOM>')
+    })
+
+    it('should return undefined when author has no slackMention anywhere', () => {
+      mockReadFileSync.mockReturnValue('mock yaml content')
+      mockYamlLoad.mockReturnValue({
+        members: [{ githubName: 'author' }],
+        reviewers: [{ githubName: 'other', slackMention: '<@UOTHER>' }]
+      })
+
+      expect(reviewerSelector.findSlackMention('author')).toBeUndefined()
+    })
+  })
 })

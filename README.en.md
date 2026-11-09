@@ -37,7 +37,16 @@ reviewers:
 fixedReviewers:
   - githubName: 'you-die'
     slackMention: '<@U0000000>' # Slack user ID
+
+# author Slack mention mapping (optional) — not used for reviewer assignment
+members:
+  - githubName: 'pr-author'
+    slackMention: '<@U9999999>' # Slack user ID
 ```
+
+The Slack notification mentions the PR author by looking up `slackMention` in
+`members` → `fixedReviewers` → `reviewers`, and falls back to the GitHub login
+when none is found.
 
 ### 2. Create Workflow File
 

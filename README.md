@@ -35,7 +35,16 @@ reviewers:
 fixedReviewers:
   - githubName: '유다희'
     slackMention: '<@U0000000>' # Slack 사용자 ID
+
+# 담당자 Slack 멘션 매핑 (옵션) — 리뷰어 배정에는 쓰지 않음
+members:
+  - githubName: '이작성'
+    slackMention: '<@U9999999>' # Slack 사용자 ID
 ```
+
+Slack 알림의 담당자(PR 작성자)는 `members` → `fixedReviewers` → `reviewers`
+순서로 `slackMention`을 찾아 멘션하고, 어디에도 없으면 GitHub 아이디를
+표시합니다.
 
 ### 2. 워크플로우 파일 생성
 
